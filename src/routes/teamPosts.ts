@@ -61,7 +61,7 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
       const teamMember = await prisma.teamMembership.findFirst({
         where: {
           userId: body.authorId,
-          teamId: teamId,
+          teamId,
         },
       });
 
@@ -128,7 +128,7 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
         prisma.teamMembership.findFirst({
           where: {
             userId: body.userId,
-            teamId: teamId,
+            teamId,
             role: 'coach',
           },
         }),
@@ -186,8 +186,8 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
       // Check if the user is a coach for this team
       const isCoach = await prisma.teamMembership.findFirst({
         where: {
-          userId: userId,
-          teamId: teamId,
+          userId,
+          teamId,
           role: 'coach',
         },
       });

@@ -36,7 +36,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
       // Find the user quest with assigned status
       const userQuest = await prisma.userQuest.findFirst({
         where: {
-          userId: userId,
+          userId,
           questId: body.questId,
           status: 'assigned',
         },
@@ -60,14 +60,14 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           status: 'completed',
           completedAt: new Date(),
-          notes: notes,
+          notes,
         },
       });
 
       // Update or create user stats
       let userStat = await prisma.userStat.findFirst({
         where: {
-          userId: userId,
+          userId,
           categoryId: userQuest.quest.categoryId,
         },
       });
@@ -88,7 +88,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
         // Create new stat
         userStat = await prisma.userStat.create({
           data: {
-            userId: userId,
+            userId,
             categoryId: userQuest.quest.categoryId,
             points: userQuest.quest.pointValue,
             level: 1,
@@ -145,7 +145,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
             categoryId: category.id,
             userQuests: {
               none: {
-                userId: userId,
+                userId,
                 status: { in: ['assigned', 'completed'] },
               },
             },
@@ -197,7 +197,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
       // 5. Return the newly assigned quests
       const userQuests = await prisma.userQuest.findMany({
         where: {
-          userId: userId,
+          userId,
           status: 'assigned',
         },
         include: {
@@ -231,7 +231,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const completedQuests = await prisma.userQuest.findMany({
         where: {
-          userId: userId,
+          userId,
           status: 'completed',
         },
         include: {
@@ -279,8 +279,8 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
 
       const updatedQuest = await prisma.userQuest.updateMany({
         where: {
-          userId: userId,
-          questId: questId,
+          userId,
+          questId,
           status: 'completed',
         },
         data: {
@@ -310,8 +310,8 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const deletedQuest = await prisma.userQuest.deleteMany({
         where: {
-          userId: userId,
-          questId: questId,
+          userId,
+          questId,
           status: 'completed',
         },
       });
@@ -412,7 +412,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const storedMetrics = await prisma.userPerformanceMetrics.upsert({
         where: {
           userId_metricDate: {
-            userId: userId,
+            userId,
             metricDate: today,
           },
         },
@@ -429,7 +429,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
           avgStress: metrics.stress,
         },
         create: {
-          userId: userId,
+          userId,
           metricDate: today,
           focusScore,
           effortScore,

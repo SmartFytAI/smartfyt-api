@@ -52,7 +52,7 @@ const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
       // Create the chat session
       const chatSession = await prisma.chatSession.create({
         data: {
-          userId: userId,
+          userId,
         },
       });
 
@@ -94,7 +94,7 @@ const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
 
       const sessions = await prisma.chatSession.findMany({
         where: {
-          userId: userId,
+          userId,
         },
         orderBy: {
           createdAt: 'desc', // Get the most recent sessions first

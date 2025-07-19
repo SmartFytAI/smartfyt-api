@@ -114,7 +114,7 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
       const updated = await prisma.notification.updateMany({
         where: {
           id: notificationId,
-          userId: userId, // Ensure user can only mark their own notifications
+          userId, // Ensure user can only mark their own notifications
         },
         data: { read: true },
       });

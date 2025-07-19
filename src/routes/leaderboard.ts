@@ -48,7 +48,7 @@ const leaderboardRoutes: FastifyPluginAsync = async (fastify) => {
 
       const members = await prisma.teamMembership.findMany({
         where: {
-          teamId: teamId,
+          teamId,
           role: 'member',
         },
         include: {

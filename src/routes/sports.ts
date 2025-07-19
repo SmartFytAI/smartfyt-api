@@ -1,6 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error -- CJS->ESM interop
+// CJS->ESM interop
 import prismaModule from '../../lib/prisma.js';
 import log from '../utils/logger.js';
 

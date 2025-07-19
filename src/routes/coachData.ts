@@ -122,7 +122,7 @@ const coachDataRoutes: FastifyPluginAsync = async (fastify) => {
 
       const teamMemberships = await prisma.teamMembership.findMany({
         where: {
-          teamId: teamId,
+          teamId,
           role: 'member', // Only get athletes
         },
         include: {
@@ -173,7 +173,7 @@ const coachDataRoutes: FastifyPluginAsync = async (fastify) => {
         prisma.journalInsight.findMany({
           where: {
             athleteId: { in: athleteIds },
-            teamId: teamId,
+            teamId,
           },
           distinct: ['athleteId'],
           orderBy: { weekEnd: 'desc' },
@@ -236,7 +236,7 @@ const coachDataRoutes: FastifyPluginAsync = async (fastify) => {
           completedQuests: questStats.completed,
           totalQuests: questStats.total,
           pointsEarned: 0,
-          playerStatus: playerStatus,
+          playerStatus,
           latestInsight: latestInsight
             ? {
                 id: latestInsight.id,

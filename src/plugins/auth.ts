@@ -73,7 +73,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
       // Validate the JWT token with Kinde
       const validationResult = await validateToken({
-        token: token,
+        token,
         domain: kindeDomain,
       });
 
