@@ -255,6 +255,197 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       reply.code(500).send({ error: 'Failed to update user goals' });
     }
   });
+
+  // PUT /users/:userId/profile-image – update user profile image
+  fastify.put('/users/:userId/profile-image', async (request, reply) => {
+    const { userId } = request.params as { userId: string };
+    const body = request.body as {
+      imageUrl: string;
+    };
+
+    try {
+      if (body.imageUrl === undefined) {
+        reply.code(400).send({ error: 'imageUrl is required' });
+        return;
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { profileImage: body.imageUrl },
+      });
+
+      reply.send({ success: true, profileImage: updatedUser.profileImage });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({ error: 'Failed to update profile image' });
+    }
+  });
+
+  // PUT /users/:userId/form-data – update user form data
+  fastify.put('/users/:userId/form-data', async (request, reply) => {
+    const { userId } = request.params as { userId: string };
+    const body = request.body as {
+      grade?: string;
+      school?: string;
+      sport?: string;
+      age?: string;
+      phone?: string;
+      sleepHours?: number;
+      studyHours?: number;
+      activeHours?: number;
+      stressLevel?: number;
+      screenTime?: number;
+      wearable?: string;
+      coachName?: string;
+      coachEmail?: string;
+    };
+
+    try {
+      // Find existing user form
+      const existingForm = await prisma.userForm.findFirst({
+        where: { authorID: userId },
+        include: { team: true },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      if (existingForm) {
+        // Update existing form
+        const updateData: any = {};
+        
+        if (body.grade !== undefined) updateData.grade = body.grade;
+        if (body.age !== undefined) updateData.age = body.age;
+        if (body.phone !== undefined) updateData.phone = body.phone;
+        if (body.sleepHours !== undefined) updateData.sleepHours = body.sleepHours;
+        if (body.studyHours !== undefined) updateData.studyHours = body.studyHours;
+        if (body.activeHours !== undefined) updateData.activeHours = body.activeHours;
+        if (body.stressLevel !== undefined) updateData.stress = body.stressLevel;
+        if (body.screenTime !== undefined) updateData.screenTime = body.screenTime;
+        if (body.wearable !== undefined) updateData.wearable = body.wearable;
+        if (body.coachName !== undefined) updateData.coachName = body.coachName;
+        if (body.coachEmail !== undefined) updateData.coachEmail = body.coachEmail;
+
+        // Handle school and sport updates (these require team updates)
+        if (body.school || body.sport) {
+          let schoolId = body.school;
+          let sportId = body.sport;
+
+          // If only one is provided, get the other from existing form
+          if (!schoolId && existingForm.team?.schoolID) {
+            schoolId = existingForm.team.schoolID;
+          }
+          if (!sportId && existingForm.sportID) {
+            sportId = existingForm.sportID;
+          }
+
+          if (schoolId && sportId) {
+            // Find or create team
+            let team = await prisma.team.findFirst({
+              where: {
+                schoolID: schoolId,
+                sportID: sportId,
+              },
+            });
+
+            if (!team) {
+              const school = await prisma.school.findUnique({ where: { id: schoolId } });
+              const sport = await prisma.sport.findUnique({ where: { id: sportId } });
+              
+              if (school && sport) {
+                team = await prisma.team.create({
+                  data: {
+                    name: `${school.name} ${sport.name}`,
+                    schoolID: schoolId,
+                    sportID: sportId,
+                  },
+                });
+              }
+            }
+
+            if (team) {
+              updateData.teamID = team.id;
+              updateData.sportID = sportId;
+            }
+          }
+        }
+
+        updateData.updatedAt = new Date();
+
+        const updatedForm = await prisma.userForm.update({
+          where: { id: existingForm.id },
+          data: updateData,
+        });
+
+        reply.send({ success: true, formData: updatedForm });
+      } else {
+        // Create new form if none exists
+        const formData: any = {
+          authorID: userId,
+          title: Date.now().toString(),
+          response: '',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          published: false,
+          podcast: 'pending',
+          name: '',
+          email: '',
+          academicGoals: '',
+          athleticGoals: '',
+        };
+
+        // Add provided fields
+        if (body.grade !== undefined) formData.grade = body.grade;
+        if (body.age !== undefined) formData.age = body.age;
+        if (body.phone !== undefined) formData.phone = body.phone;
+        if (body.sleepHours !== undefined) formData.sleepHours = body.sleepHours;
+        if (body.studyHours !== undefined) formData.studyHours = body.studyHours;
+        if (body.activeHours !== undefined) formData.activeHours = body.activeHours;
+        if (body.stressLevel !== undefined) formData.stress = body.stressLevel;
+        if (body.screenTime !== undefined) formData.screenTime = body.screenTime;
+        if (body.wearable !== undefined) formData.wearable = body.wearable;
+        if (body.coachName !== undefined) formData.coachName = body.coachName;
+        if (body.coachEmail !== undefined) formData.coachEmail = body.coachEmail;
+
+        // Handle school and sport
+        if (body.school && body.sport) {
+          let team = await prisma.team.findFirst({
+            where: {
+              schoolID: body.school,
+              sportID: body.sport,
+            },
+          });
+
+          if (!team) {
+            const school = await prisma.school.findUnique({ where: { id: body.school } });
+            const sport = await prisma.sport.findUnique({ where: { id: body.sport } });
+            
+            if (school && sport) {
+              team = await prisma.team.create({
+                data: {
+                  name: `${school.name} ${sport.name}`,
+                  schoolID: body.school,
+                  sportID: body.sport,
+                },
+              });
+            }
+          }
+
+          if (team) {
+            formData.teamID = team.id;
+            formData.sportID = body.sport;
+          }
+        }
+
+        const newForm = await prisma.userForm.create({
+          data: formData,
+        });
+
+        reply.send({ success: true, formData: newForm });
+      }
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({ error: 'Failed to update user form data' });
+    }
+  });
 };
 
 export default userManagementRoutes; 
