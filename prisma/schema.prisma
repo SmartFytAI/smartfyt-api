@@ -1,0 +1,647 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Quest {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  categoryId  String
+  pointValue  Int           @default(5)
+  category    QuestCategory @relation(fields: [categoryId], references: [id])
+  userQuests  UserQuest[]
+
+  @@index([categoryId])
+}
+
+model QuestCategory {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  quests    Quest[]
+  userStats UserStat[]
+}
+
+model UserQuest {
+  id            String    @id @default(cuid())
+  userId        String
+  questId       String
+  status        String    @default("assigned")
+  assignedAt    DateTime  @default(now())
+  completedAt   DateTime?
+  pointsAwarded Int?
+  notes         String?   @db.VarChar(280)
+  quest         Quest     @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([userId])
+  @@index([questId])
+}
+
+model JournalInsight {
+  id                   String   @id @default(cuid())
+  athleteId            String
+  teamId               String
+  summary              String
+  patterns             String
+  concerns             String
+  recommendations      String
+  conversationStarters String
+  weekStart            DateTime
+  weekEnd              DateTime
+  createdAt            DateTime @default(now())
+  s3Path               String?
+  status               String   @default("PROCESSING")
+  updatedAt            DateTime @default(now()) @updatedAt
+  playerStatus         String   @default("On Track ✅")
+  athlete              User     @relation("AthleteInsights", fields: [athleteId], references: [id], onDelete: Cascade)
+  team                 Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([athleteId, teamId, weekStart, weekEnd])
+  @@index([athleteId])
+  @@index([teamId])
+  @@index([weekStart, weekEnd])
+}
+
+model UserStat {
+  id          String        @id @default(cuid())
+  userId      String
+  categoryId  String
+  points      Int           @default(0)
+  level       Int           @default(1)
+  lastUpdated DateTime      @default(now()) @updatedAt
+  category    QuestCategory @relation(fields: [categoryId], references: [id])
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+  @@index([userId])
+  @@index([categoryId])
+}
+
+model User {
+  id                     String                   @id @unique
+  email                  String                   @unique
+  firstName              String
+  lastName               String
+  profileImage           String
+  username               String
+  phone_number           String?                  @default("placeholder")
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  activeRole             String                   @default("student")
+  roles                  String[]                 @default([""])
+  metadata               Json?                    @default("{}")
+  schoolId               String?
+  stripeCurrentPeriodEnd DateTime?
+  stripeCustomerId       String?                  @unique
+  stripePriceId          String?
+  stripeSubscriptionId   String?                  @unique
+  terraConnected         Boolean                  @default(false)
+  terraProvider          String?
+  terraUserId            String?                  @unique
+  activities             Activity[]
+  activityDetails        ActivityDetail[]
+  bodyMetrics            BodyMetrics[]
+  chatSessions           ChatSession[]
+  dailyHealthSummaries   DailyHealthSummary[]
+  journals               Journal[]
+  athleteInsights        JournalInsight[]         @relation("AthleteInsights")
+  morningJournals        MorningJournal[]
+  triggeredNotifications Notification[]           @relation("NotificationActor")
+  notifications          Notification[]
+  sleep                  Sleep[]
+  sleepDetails           SleepDetail[]
+  subscriptions          Subscription[]
+  teamMemberships        TeamMembership[]
+  TeamNotes              TeamNotes[]
+  teamPosts              TeamPost[]
+  school                 School?                  @relation(fields: [schoolId], references: [id])
+  posts                  UserForm[]
+  performanceMetrics     UserPerformanceMetrics[]
+  userQuests             UserQuest[]
+  userStats              UserStat[]
+  UserStreak             UserStreak[]
+  terraUserProfile       terra_users?             @relation("UserToTerraUsers")
+  sports                 Sport[]                  @relation("SportToUser")
+
+  @@index([schoolId])
+  @@index([stripeSubscriptionId])
+}
+
+model MorningJournal {
+  id             String   @id @default(cuid())
+  goalAction     String
+  gratitudeList  String
+  idealDayVision String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  authorId       String
+  author         User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+}
+
+model UserPerformanceMetrics {
+  id               String   @id @default(cuid())
+  userId           String
+  focusScore       Float
+  effortScore      Float
+  readinessScore   Float
+  motivationScore  Float
+  performanceScore Float
+  calculatedAt     DateTime @default(now())
+  avgActiveHours   Float
+  avgScreenTime    Float
+  avgSleepHours    Float
+  avgStress        Float
+  avgStudyHours    Float
+  metricDate       DateTime @db.Date
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, metricDate])
+  @@index([userId])
+  @@index([calculatedAt])
+  @@index([metricDate])
+}
+
+model UserForm {
+  id            String   @id @default(cuid())
+  title         String
+  published     Boolean  @default(false)
+  authorID      String   @map("author_id")
+  name          String
+  age           String
+  email         String
+  phone         String
+  wearable      String
+  academicGoals String
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+  createdAt     DateTime @db.Timestamptz(6)
+  response      String
+  athleticGoals String
+  podcast       String?  @default("pending")
+  activeHours   Float
+  coachEmail    String?
+  coachName     String?
+  grade         String   @default("placeholder")
+  sportID       String?
+  teamID        String?
+  sleepHours    Float
+  studyHours    Float
+  stress        Float
+  screenTime    Float
+  author        User     @relation(fields: [authorID], references: [id], onDelete: Cascade)
+  sport         Sport?   @relation(fields: [sportID], references: [id])
+  team          Team?    @relation(fields: [teamID], references: [id])
+
+  @@index([authorID])
+  @@index([sportID])
+  @@index([teamID])
+}
+
+model Journal {
+  id          String   @id @default(cuid())
+  title       String
+  wentWell    String
+  notWell     String
+  goals       String
+  authorID    String   @map("author_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  response    String   @default("pending")
+  sleepHours  Float
+  activeHours Float
+  stress      Float
+  screenTime  Float
+  studyHours  Float
+  author      User     @relation(fields: [authorID], references: [id], onDelete: Cascade)
+
+  @@index([authorID])
+}
+
+model Team {
+  id              String           @id @unique @default(cuid())
+  name            String
+  sportID         String
+  schoolID        String?
+  journalInsights JournalInsight[]
+  school          School?          @relation(fields: [schoolID], references: [id])
+  sport           Sport            @relation(fields: [sportID], references: [id])
+  memberships     TeamMembership[]
+  teamNotes       TeamNotes[]
+  teamPosts       TeamPost[]
+  userForms       UserForm[]
+
+  @@unique([name, schoolID])
+  @@index([sportID])
+  @@index([schoolID])
+}
+
+model Sport {
+  id              String           @id @unique @default(cuid())
+  name            String           @unique
+  teams           Team[]
+  teamMemberships TeamMembership[]
+  userForms       UserForm[]
+  users           User[]           @relation("SportToUser")
+}
+
+model School {
+  id    String @id @unique @default(cuid())
+  name  String @unique
+  teams Team[]
+  users User[]
+}
+
+model TeamPost {
+  id        String   @id @unique @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  published Boolean  @default(false)
+  teamID    String
+  authorID  String
+  author    User     @relation(fields: [authorID], references: [id])
+  team      Team     @relation(fields: [teamID], references: [id])
+
+  @@index([teamID])
+  @@index([authorID])
+}
+
+model TeamNotes {
+  id         String   @id @unique @default(cuid())
+  title      String
+  philosophy String
+  notes      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  published  Boolean  @default(false)
+  teamID     String
+  authorID   String
+  author     User     @relation(fields: [authorID], references: [id])
+  team       Team     @relation(fields: [teamID], references: [id])
+
+  @@index([teamID])
+  @@index([authorID])
+}
+
+model TeamMembership {
+  id       String   @id @unique @default(cuid())
+  userId   String
+  teamId   String
+  sportId  String
+  joinedAt DateTime @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  role     String   @default("member")
+  sport    Sport    @relation(fields: [sportId], references: [id])
+  team     Team     @relation(fields: [teamId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([teamId])
+  @@index([sportId])
+  @@index([role])
+}
+
+model Subscription {
+  id                      String            @id @default(cuid())
+  userId                  String
+  status                  String            @default("active")
+  startDate               DateTime          @default(now())
+  endDate                 DateTime?
+  renewalDate             DateTime?
+  paymentProcessor        String
+  processorCustomerId     String?
+  processorSubscriptionId String?
+  priceId                 String?
+  quantity                Int               @default(1)
+  canceledAt              DateTime?
+  currentPeriodStart      DateTime?
+  currentPeriodEnd        DateTime?
+  cancelAtPeriodEnd       Boolean           @default(false)
+  pausedAt                DateTime?
+  resumesAt               DateTime?
+  latestInvoiceId         String?
+  latestPaymentIntentId   String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  planId                  String?
+  stripeCurrentPeriodEnd  DateTime?
+  stripeCustomerId        String?
+  stripePriceId           String?
+  stripeSubscriptionId    String?           @unique
+  plan                    SubscriptionPlan? @relation(fields: [planId], references: [id])
+  user                    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([userId])
+  @@index([status])
+  @@index([renewalDate])
+  @@index([processorSubscriptionId])
+  @@index([processorCustomerId])
+  @@index([priceId])
+  @@index([stripeSubscriptionId])
+  @@index([stripeCustomerId])
+  @@index([stripePriceId])
+}
+
+model SubscriptionPlan {
+  id              String         @id @default(cuid())
+  name            String         @unique
+  description     String
+  price           String
+  interval        String
+  features        String[]
+  planType        String         @default("individual")
+  stripePriceId   String?        @unique
+  stripeProductId String?
+  trialDays       Int?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  isActive        Boolean        @default(true)
+  subscriptions   Subscription[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  link      String?
+  actorId   String?
+  type      String?
+  actor     User?    @relation("NotificationActor", fields: [actorId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@index([userId])
+  @@index([actorId])
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  title     String?
+  messages  ChatMessage[]
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      ChatRole
+  content   String
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+model ContactInquiry {
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  organization String
+  planType     String
+  message      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model terra_data_payloads {
+  user_id           String    @db.VarChar(36)
+  data_type         String
+  created_at        String
+  payload_id        String
+  start_time        String?
+  end_time          String?
+  processed_at      DateTime?
+  processing_error  String?
+  processing_status String?   @default("PENDING")
+
+  @@id([user_id, created_at])
+  @@index([payload_id])
+  @@index([processing_status])
+}
+
+model terra_misc_payloads {
+  user_id      String  @db.VarChar(36)
+  data_type    String?
+  payload_type String?
+  created_at   String
+  payload_id   String
+
+  @@id([user_id, created_at])
+}
+
+model terra_users {
+  user_id        String  @id @db.VarChar(36)
+  reference_id   String? @unique
+  created_at     String
+  granted_scopes String?
+  provider       String
+  state          String? @db.VarChar(20)
+  user           User?   @relation("UserToTerraUsers", fields: [reference_id], references: [id], onDelete: Cascade)
+
+  @@index([reference_id])
+}
+
+model DailyHealthSummary {
+  id                     String   @id @default(cuid())
+  userId                 String
+  date                   DateTime @db.Date
+  steps                  Int?
+  distanceMeters         Float?
+  activeCalories         Float?
+  lowActivityMinutes     Int?
+  mediumActivityMinutes  Int?
+  highActivityMinutes    Int?
+  sleepDurationSeconds   Int?
+  sleepScore             Float?
+  timeInBedSeconds       Int?
+  restingHeartRate       Int?
+  minHeartRate           Int?
+  maxHeartRate           Int?
+  avgHeartRate           Float?
+  hrvSdnn                Float?
+  hrvRmssd               Float?
+  weightKg               Float?
+  bodyFatPercentage      Float?
+  spo2Percentage         Float?
+  bodyTemperatureCelsius Float?
+  stressScore            Float?
+  avgStressLevel         Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model SleepDetail {
+  id                        String   @id @default(cuid())
+  userId                    String
+  terraUserId               String?
+  provider                  String?
+  startTime                 DateTime
+  endTime                   DateTime
+  durationTotalSeconds      Int
+  durationInBedSeconds      Int?
+  durationAwakeSeconds      Int?
+  durationLightSleepSeconds Int?
+  durationDeepSleepSeconds  Int?
+  durationRemSleepSeconds   Int?
+  efficiency                Float?
+  score                     Float?
+  numWakeups                Int?
+  timezoneOffset            String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, startTime])
+  @@index([terraUserId])
+}
+
+model ActivityDetail {
+  id                      String          @id @default(cuid())
+  userId                  String
+  terraUserId             String?
+  provider                String?
+  type                    String
+  startTime               DateTime
+  endTime                 DateTime
+  durationSeconds         Int
+  deviceName              String?
+  activeCalories          Float?
+  distanceMeters          Float?
+  steps                   Int?
+  avgSpeedMetersPerSecond Float?
+  maxSpeedMetersPerSecond Float?
+  avgHeartRate            Int?
+  maxHeartRate            Int?
+  elevationGainMeters     Float?
+  lapCount                Int?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  user                    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  heartRateZones          HeartRateZone[]
+
+  @@unique([userId, startTime, type])
+  @@index([userId, startTime])
+  @@index([terraUserId])
+  @@index([type])
+}
+
+model HeartRateZone {
+  id                   String          @id @default(cuid())
+  activityDetailId     String?
+  dailyHealthSummaryId String?
+  zoneName             String
+  minHeartRate         Int
+  maxHeartRate         Int
+  durationSeconds      Int
+  activity             ActivityDetail? @relation(fields: [activityDetailId], references: [id], onDelete: Cascade)
+
+  @@index([activityDetailId])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  provider  String
+  type      String
+  startTime DateTime
+  endTime   DateTime
+  duration  Int
+  distance  Float?
+  calories  Int?
+  steps     Int?
+  heartRate Float?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, startTime])
+}
+
+model Sleep {
+  id         String   @id @default(cuid())
+  userId     String
+  provider   String
+  startTime  DateTime
+  endTime    DateTime
+  duration   Int
+  quality    Float?
+  deepSleep  Int?
+  lightSleep Int?
+  remSleep   Int?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, startTime])
+}
+
+model BodyMetrics {
+  id        String   @id @default(cuid())
+  userId    String
+  provider  String
+  timestamp DateTime
+  weight    Float?
+  bodyFat   Float?
+  bmi       Float?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, timestamp])
+}
+
+model DailyReminderIndex {
+  id          String   @id @unique @default(cuid())
+  quoteIndex  Int      @default(0)
+  clipIndex   Int      @default(0)
+  lastUpdated DateTime @default(now()) @updatedAt
+}
+
+model UserStreak {
+  id             String    @id
+  userId         String
+  type           String
+  currentStreak  Int
+  longestStreak  Int
+  lastActionDate DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime
+  User           User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
+}
+
+enum ChatRole {
+  user
+  assistant
+  system
+}

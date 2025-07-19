@@ -1,0 +1,140 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "version": 1,
+    "install": {
+      "nodejs": {
+        "pkg-path": "nodejs"
+      }
+    },
+    "hook": {},
+    "profile": {},
+    "options": {}
+  },
+  "packages": [
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/vw8bgqlyqqkrqkj3zi87g5dn3f9gdbig-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "rev_count": 831064,
+      "rev_date": "2025-07-16T17:35:22Z",
+      "scrape_date": "2025-07-19T00:32:27.271401Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/13sy62qad5p8lhbak7lqmh5dhjakqlkd-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/lavkp68zvwgbs3z6zzl31q6yzbi2hkwh-nodejs-22.17.0-libv8",
+        "out": "/nix/store/gaq6v57mm40g1974hyg1vvxgzxqh16af-nodejs-22.17.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/y5qprvilc10mz1vp8a7ns064kyjfbfvh-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "rev_count": 831064,
+      "rev_date": "2025-07-16T17:35:22Z",
+      "scrape_date": "2025-07-19T00:58:13.318139Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/gv6ydjf9r179ih2npybkzxrnf6wzq77l-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/zlb0n44z62k16c41xvx9yci5010jbqvc-nodejs-22.17.0-libv8",
+        "out": "/nix/store/ywi3gcwj1cjbzb9l0ixqn438z52i3qiw-nodejs-22.17.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/p5byay4vjnbbf91b6fl7bl6ch3zn417g-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "rev_count": 831064,
+      "rev_date": "2025-07-16T17:35:22Z",
+      "scrape_date": "2025-07-19T01:21:15.002898Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/8m3dnkmhcfvx1y11nqxaah29siwrn5a3-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/hn6z4a6bz6m1v8852yrw51pwv4pf73xk-nodejs-22.17.0-libv8",
+        "out": "/nix/store/4w47135rza25rjmfq247x63qlm92v4j1-nodejs-22.17.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/6bjkmkxq8adfq2h7qpxc6gjw15rjypm5-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "6e987485eb2c77e5dcc5af4e3c70843711ef9251",
+      "rev_count": 831064,
+      "rev_date": "2025-07-16T17:35:22Z",
+      "scrape_date": "2025-07-19T01:48:35.326153Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/gwsbdl02aszapvyykb2kcyqx71q2mj6n-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/2cxsn91qbd148jsz8jjbfzq41qbl9q8j-nodejs-22.17.0-libv8",
+        "out": "/nix/store/r1smm331j6crqs02mn986g06f7cpbggh-nodejs-22.17.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    }
+  ]
+}
