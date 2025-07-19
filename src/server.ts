@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import authPlugin from './plugins/auth.js';
 import sportsRoutes from './routes/sports.js';
 import schoolsRoutes from './routes/schools.js';
@@ -36,6 +37,13 @@ log.info('KINDE_ISSUER_URL:', { configured: !!process.env.KINDE_ISSUER_URL });
 log.info('KINDE_CLIENT_ID:', { configured: !!process.env.KINDE_CLIENT_ID });
 
 const server = Fastify();
+
+// Register CORS to allow frontend requests
+server.register(cors, {
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+});
 
 // Apply authentication middleware to all routes
 server.register(authPlugin);

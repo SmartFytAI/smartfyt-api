@@ -24,6 +24,7 @@
     "@aws-sdk/client-s3": "^3.682.0",
     "@aws-sdk/client-sqs": "^3.682.0",
     "@aws-sdk/s3-request-presigner": "^3.691.0",
+    "@fastify/cors": "^8.5.0",
     "@kinde/jwt-validator": "^0.4.0",
     "@prisma/client": "^6.4.1",
     "dotenv": "^17.2.0",
