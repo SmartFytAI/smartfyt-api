@@ -1,6 +1,4 @@
 import { FastifyPluginAsync } from 'fastify';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error prisma interop
 import prismaModule from '../../lib/prisma.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 

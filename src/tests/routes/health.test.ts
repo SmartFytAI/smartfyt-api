@@ -1,15 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
-import authPlugin from '../../plugins/auth.js';
 
 describe('Health Endpoint', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
     app = Fastify();
-    
-    // Register auth plugin
-    await app.register(authPlugin);
     
     // Register health endpoint (same as in server.ts)
     app.get('/health', async () => ({ 

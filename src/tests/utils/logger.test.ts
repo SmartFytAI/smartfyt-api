@@ -1,19 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock the logger module before importing
+vi.mock('../../utils/logger.js', () => ({
+  log: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    auth: {
+      success: vi.fn(),
+      failure: vi.fn(),
+      tokenValidation: vi.fn(),
+    },
+    request: {
+      start: vi.fn(),
+      complete: vi.fn(),
+      error: vi.fn(),
+    },
+    database: {
+      query: vi.fn(),
+      error: vi.fn(),
+    },
+  },
+}));
+
 import { log } from '../../utils/logger.js';
 
 describe('Logger', () => {
-  let mockLogger: any;
-
   beforeEach(() => {
-    // Mock the pino logger
-    mockLogger = {
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    };
-    
-    // Reset all mocks
+    // Reset all mocks before each test
     vi.clearAllMocks();
   });
 
@@ -53,5 +68,8 @@ describe('Logger', () => {
     expect(() => {
       log.error(message, error);
     }).not.toThrow();
+    
+    // Verify the mock was called
+    expect(log.error).toHaveBeenCalledWith(message, error);
   });
 }); 

@@ -23,6 +23,10 @@
     "dist/",
     "node_modules/",
     "coverage/",
-    "*.config.js"
+    "src/tests/",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "*.config.js",
+    "*.config.ts"
   ]
 } 
