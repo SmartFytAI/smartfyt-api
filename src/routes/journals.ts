@@ -64,6 +64,7 @@ const journalsRoutes: FastifyPluginAsync = async (fastify) => {
         stress?: number;
         screenTime?: number;
         studyHours?: number;
+        createdAt?: string; // Optional ISO date string for custom date
       };
 
       if (!body?.userId || !body?.title) {
@@ -71,6 +72,9 @@ const journalsRoutes: FastifyPluginAsync = async (fastify) => {
         return;
       }
 
+      // Parse custom date if provided, otherwise use current time
+      const journalDate = body.createdAt ? new Date(body.createdAt) : new Date();
+      
       const newJournal = await prisma.journal.create({
         data: {
           title: body.title,
@@ -83,6 +87,7 @@ const journalsRoutes: FastifyPluginAsync = async (fastify) => {
           stress: body.stress ?? 0,
           screenTime: body.screenTime ?? 0,
           studyHours: body.studyHours ?? 0,
+          createdAt: journalDate,
         },
       });
 
