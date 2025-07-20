@@ -1,0 +1,602 @@
+[
+  {
+    "id": 1,
+    "quote": "The only way to do great work is to love what you do.",
+    "author": "Steve Jobs",
+    "category": "passion"
+  },
+  {
+    "id": 2,
+    "quote": "Success is not final, failure is not fatal: It is the courage to continue that counts.",
+    "author": "Winston Churchill",
+    "category": "perseverance"
+  },
+  {
+    "id": 3,
+    "quote": "The mind is everything. What you think you become.",
+    "author": "Buddha",
+    "category": "mindset"
+  },
+  {
+    "id": 4,
+    "quote": "Believe you can and you're halfway there.",
+    "author": "Theodore Roosevelt",
+    "category": "confidence"
+  },
+  {
+    "id": 5,
+    "quote": "Great things come from hard work and perseverance. No excuses.",
+    "author": "Kobe Bryant",
+    "category": "work ethic"
+  },
+  {
+    "id": 6,
+    "quote": "Pressure makes diamonds. Stay solid.",
+    "author": "Unknown",
+    "category": "pressure"
+  },
+  {
+    "id": 7,
+    "quote": "You can't cheat the grind. It knows how much you've invested.",
+    "author": "Eric Thomas",
+    "category": "dedication"
+  },
+  {
+    "id": 8,
+    "quote": "Work hard in silence, let your success be the noise.",
+    "author": "Frank Ocean",
+    "category": "humility"
+  },
+  {
+    "id": 9,
+    "quote": "You won't always be motivated, so you must learn to be disciplined.",
+    "author": "Jocko Willink",
+    "category": "discipline"
+  },
+  {
+    "id": 10,
+    "quote": "Consistency separates winners from wannabes.",
+    "author": "Kobe Bryant",
+    "category": "consistency"
+  },
+  {
+    "id": 11,
+    "quote": "Discipline is choosing what you want most over what you want now.",
+    "author": "Abraham Lincoln",
+    "category": "discipline"
+  },
+  {
+    "id": 12,
+    "quote": "You weren't born to be average.",
+    "author": "Eric Thomas",
+    "category": "excellence"
+  },
+  {
+    "id": 13,
+    "quote": "Some people want it to happen, some wish it would happen, others make it happen.",
+    "author": "Michael Jordan",
+    "category": "action"
+  },
+  {
+    "id": 14,
+    "quote": "Don't stop when you're tired. Stop when you're done.",
+    "author": "David Goggins",
+    "category": "endurance"
+  },
+  {
+    "id": 15,
+    "quote": "I didn't come this far to only come this far.",
+    "author": "Unknown",
+    "category": "perseverance"
+  },
+  {
+    "id": 16,
+    "quote": "The best way to predict the future is to create it.",
+    "author": "Peter Drucker",
+    "category": "vision"
+  },
+  {
+    "id": 17,
+    "quote": "Act as if what you do makes a difference. It does.",
+    "author": "William James",
+    "category": "impact"
+  },
+  {
+    "id": 18,
+    "quote": "Hardships often prepare ordinary people for an extraordinary destiny.",
+    "author": "C.S. Lewis",
+    "category": "adversity"
+  },
+  {
+    "id": 19,
+    "quote": "It does not matter how slowly you go as long as you do not stop.",
+    "author": "Confucius",
+    "category": "persistence"
+  },
+  {
+    "id": 20,
+    "quote": "Our greatest glory is not in never failing, but in rising up every time we fail.",
+    "author": "Ralph Waldo Emerson",
+    "category": "resilience"
+  },
+  {
+    "id": 21,
+    "quote": "Everything you've ever wanted is on the other side of fear.",
+    "author": "George Addair",
+    "category": "courage"
+  },
+  {
+    "id": 22,
+    "quote": "You are never too old to set another goal or to dream a new dream.",
+    "author": "C.S. Lewis",
+    "category": "dreams"
+  },
+  {
+    "id": 23,
+    "quote": "The journey of a thousand miles begins with a single step.",
+    "author": "Lao Tzu",
+    "category": "beginnings"
+  },
+  {
+    "id": 24,
+    "quote": "Get after it. Discipline equals freedom.",
+    "author": "Jocko Willink",
+    "category": "discipline"
+  },
+  {
+    "id": 25,
+    "quote": "Be the hero in your own movie. Act like it.",
+    "author": "Joe Rogan",
+    "category": "leadership"
+  },
+  {
+    "id": 26,
+    "quote": "You gotta be uncommon amongst uncommon people.",
+    "author": "David Goggins",
+    "category": "excellence"
+  },
+  {
+    "id": 27,
+    "quote": "I came from the struggle, I had to hustle.",
+    "author": "Kodak Black",
+    "category": "hustle"
+  },
+  {
+    "id": 28,
+    "quote": "The marathon continues.",
+    "author": "Nipsey Hussle",
+    "category": "perseverance"
+  },
+  {
+    "id": 29,
+    "quote": "Stop waiting for someone to feel sorry for you. Get to work.",
+    "author": "David Goggins",
+    "category": "accountability"
+  },
+  {
+    "id": 30,
+    "quote": "Sometimes you gotta be your own motivation.",
+    "author": "Kodak Black",
+    "category": "self-motivation"
+  },
+  {
+    "id": 31,
+    "quote": "A lot of people dream big but never do the work.",
+    "author": "Joe Rogan",
+    "category": "action"
+  },
+  {
+    "id": 32,
+    "quote": "Don't let yesterday take up too much of today.",
+    "author": "Will Rogers",
+    "category": "present"
+  },
+  {
+    "id": 33,
+    "quote": "Hustle until your haters ask if you're hiring.",
+    "author": "Unknown",
+    "category": "success"
+  },
+  {
+    "id": 34,
+    "quote": "You gotta fall in love with the process.",
+    "author": "Eric Thomas",
+    "category": "process"
+  },
+  {
+    "id": 35,
+    "quote": "It's on you. Nobody's coming to push you.",
+    "author": "David Goggins",
+    "category": "responsibility"
+  },
+  {
+    "id": 36,
+    "quote": "Real ones move in silence, like lasagna.",
+    "author": "Lil Wayne",
+    "category": "humility"
+  },
+  {
+    "id": 37,
+    "quote": "You gotta keep your vision clear, even when the world is foggy.",
+    "author": "Jay-Z",
+    "category": "vision"
+  },
+  {
+    "id": 38,
+    "quote": "Don't sleep on yourself. Ever.",
+    "author": "Nipsey Hussle",
+    "category": "self-belief"
+  },
+  {
+    "id": 39,
+    "quote": "Success isn't owned. It's leased, and rent is due every day.",
+    "author": "J.J. Watt",
+    "category": "consistency"
+  },
+  {
+    "id": 40,
+    "quote": "The moment you give up is the moment you let someone else win.",
+    "author": "Kobe Bryant",
+    "category": "competition"
+  },
+  {
+    "id": 41,
+    "quote": "Everybody wants to be a beast, until it's time to do what beasts do.",
+    "author": "Eric Thomas",
+    "category": "commitment"
+  },
+  {
+    "id": 42,
+    "quote": "Grind now. Shine later.",
+    "author": "Unknown",
+    "category": "patience"
+  },
+  {
+    "id": 43,
+    "quote": "Outwork everyone. No excuses.",
+    "author": "Kobe Bryant",
+    "category": "work ethic"
+  },
+  {
+    "id": 44,
+    "quote": "No matter how you feel: get up, dress up, show up, and never give up.",
+    "author": "Unknown",
+    "category": "perseverance"
+  },
+  {
+    "id": 45,
+    "quote": "When you feel like quitting, think about why you started.",
+    "author": "Unknown",
+    "category": "motivation"
+  },
+  {
+    "id": 46,
+    "quote": "Comfort is the enemy of progress.",
+    "author": "Unknown",
+    "category": "growth"
+  },
+  {
+    "id": 47,
+    "quote": "Pain unlocks a secret doorway in the mind, one that leads to both peak performance and beautiful silence.",
+    "author": "David Goggins",
+    "category": "mental toughness"
+  },
+  {
+    "id": 48,
+    "quote": "Dreams don't work unless you do.",
+    "author": "John C. Maxwell",
+    "category": "action"
+  },
+  {
+    "id": 49,
+    "quote": "Fall seven times, stand up eight.",
+    "author": "Japanese Proverb",
+    "category": "resilience"
+  },
+  {
+    "id": 50,
+    "quote": "It's not supposed to be easy. If it were, everyone would do it.",
+    "author": "Tom Hanks",
+    "category": "challenge"
+  },
+  {
+    "id": 51,
+    "quote": "I never lose. I either win or learn.",
+    "author": "Nelson Mandela",
+    "category": "learning"
+  },
+  {
+    "id": 52,
+    "quote": "If you're tired, do it tired.",
+    "author": "Unknown",
+    "category": "perseverance"
+  },
+  {
+    "id": 53,
+    "quote": "Excuses sound best to the person that's making them up.",
+    "author": "Eric Thomas",
+    "category": "accountability"
+  },
+  {
+    "id": 54,
+    "quote": "Nobody cares. Work harder.",
+    "author": "Cam Newton",
+    "category": "work ethic"
+  },
+  {
+    "id": 55,
+    "quote": "Every next level of your life will demand a different you.",
+    "author": "Leonardo DiCaprio",
+    "category": "growth"
+  },
+  {
+    "id": 56,
+    "quote": "Success is doing the stuff most people won't.",
+    "author": "Unknown",
+    "category": "excellence"
+  },
+  {
+    "id": 57,
+    "quote": "I'm not a product of my circumstances. I'm a product of my decisions.",
+    "author": "Stephen Covey",
+    "category": "choices"
+  },
+  {
+    "id": 58,
+    "quote": "Play the hand you're dealt like it's the one you wanted.",
+    "author": "Nipsey Hussle",
+    "category": "attitude"
+  },
+  {
+    "id": 59,
+    "quote": "Stay focused and never slow down. You might be tired, but someone else is grinding.",
+    "author": "Joe Rogan",
+    "category": "focus"
+  },
+  {
+    "id": 60,
+    "quote": "If you want to fly, you have to give up the things that weigh you down.",
+    "author": "Toni Morrison",
+    "category": "sacrifice"
+  },
+  {
+    "id": 61,
+    "quote": "Success is the best revenge.",
+    "author": "Kanye West",
+    "category": "success"
+  },
+  {
+    "id": 62,
+    "quote": "Work until you no longer have to introduce yourself.",
+    "author": "Unknown",
+    "category": "recognition"
+  },
+  {
+    "id": 63,
+    "quote": "You miss 100% of the shots you don't take.",
+    "author": "Wayne Gretzky",
+    "category": "opportunity"
+  },
+  {
+    "id": 64,
+    "quote": "Chop wood, carry water. Do the work.",
+    "author": "Zen proverb",
+    "category": "work ethic"
+  },
+  {
+    "id": 65,
+    "quote": "Wake up with determination. Go to bed with satisfaction.",
+    "author": "Unknown",
+    "category": "daily habits"
+  },
+  {
+    "id": 66,
+    "quote": "Your biggest competition is the person in the mirror.",
+    "author": "Eric Thomas",
+    "category": "self-improvement"
+  },
+  {
+    "id": 67,
+    "quote": "Grind in silence. Let success make the noise.",
+    "author": "Unknown",
+    "category": "humility"
+  },
+  {
+    "id": 68,
+    "quote": "The grind includes Saturday and Sunday.",
+    "author": "Unknown",
+    "category": "dedication"
+  },
+  {
+    "id": 69,
+    "quote": "I didn't come this far to only come this far.",
+    "author": "Unknown",
+    "category": "perseverance"
+  },
+  {
+    "id": 70,
+    "quote": "The difference between the impossible and the possible lies in determination.",
+    "author": "Tommy Lasorda",
+    "category": "determination"
+  },
+  {
+    "id": 71,
+    "quote": "Champions keep playing until they get it right.",
+    "author": "Billie Jean King",
+    "category": "perseverance"
+  },
+  {
+    "id": 72,
+    "quote": "The more difficult the victory, the greater the happiness in winning.",
+    "author": "Pelé",
+    "category": "achievement"
+  },
+  {
+    "id": 73,
+    "quote": "You have to expect things of yourself before you can do them.",
+    "author": "Michael Jordan",
+    "category": "self-expectation"
+  },
+  {
+    "id": 74,
+    "quote": "The only person you are destined to become is the person you decide to be.",
+    "author": "Ralph Waldo Emerson",
+    "category": "choice"
+  },
+  {
+    "id": 75,
+    "quote": "It's not whether you get knocked down; it's whether you get up.",
+    "author": "Vince Lombardi",
+    "category": "resilience"
+  },
+  {
+    "id": 76,
+    "quote": "The best revenge is massive success.",
+    "author": "Frank Sinatra",
+    "category": "success"
+  },
+  {
+    "id": 77,
+    "quote": "I've failed over and over and over again in my life and that is why I succeed.",
+    "author": "Michael Jordan",
+    "category": "failure"
+  },
+  {
+    "id": 78,
+    "quote": "The only limit to your impact is your imagination and commitment.",
+    "author": "Tony Robbins",
+    "category": "impact"
+  },
+  {
+    "id": 79,
+    "quote": "Success is walking from failure to failure with no loss of enthusiasm.",
+    "author": "Winston Churchill",
+    "category": "enthusiasm"
+  },
+  {
+    "id": 80,
+    "quote": "The future belongs to those who believe in the beauty of their dreams.",
+    "author": "Eleanor Roosevelt",
+    "category": "dreams"
+  },
+  {
+    "id": 81,
+    "quote": "What you get by achieving your goals is not as important as what you become by achieving your goals.",
+    "author": "Zig Ziglar",
+    "category": "growth"
+  },
+  {
+    "id": 82,
+    "quote": "The way to get started is to quit talking and begin doing.",
+    "author": "Walt Disney",
+    "category": "action"
+  },
+  {
+    "id": 83,
+    "quote": "It always seems impossible until it's done.",
+    "author": "Nelson Mandela",
+    "category": "possibility"
+  },
+  {
+    "id": 84,
+    "quote": "Don't watch the clock; do what it does. Keep going.",
+    "author": "Sam Levenson",
+    "category": "perseverance"
+  },
+  {
+    "id": 85,
+    "quote": "The only way to achieve the impossible is to believe it is possible.",
+    "author": "Charles Kingsleigh",
+    "category": "belief"
+  },
+  {
+    "id": 86,
+    "quote": "Success is not the key to happiness. Happiness is the key to success.",
+    "author": "Albert Schweitzer",
+    "category": "happiness"
+  },
+  {
+    "id": 87,
+    "quote": "The harder you work for something, the greater you'll feel when you achieve it.",
+    "author": "Unknown",
+    "category": "achievement"
+  },
+  {
+    "id": 88,
+    "quote": "Don't limit your challenges. Challenge your limits.",
+    "author": "Unknown",
+    "category": "challenge"
+  },
+  {
+    "id": 89,
+    "quote": "The only person you should try to be better than is the person you were yesterday.",
+    "author": "Unknown",
+    "category": "self-improvement"
+  },
+  {
+    "id": 90,
+    "quote": "Your time is limited, don't waste it living someone else's life.",
+    "author": "Steve Jobs",
+    "category": "authenticity"
+  },
+  {
+    "id": 91,
+    "quote": "The greatest glory in living lies not in never falling, but in rising every time we fall.",
+    "author": "Nelson Mandela",
+    "category": "resilience"
+  },
+  {
+    "id": 92,
+    "quote": "Life is 10% what happens to you and 90% how you react to it.",
+    "author": "Charles R. Swindoll",
+    "category": "attitude"
+  },
+  {
+    "id": 93,
+    "quote": "The only way to do great work is to love what you do.",
+    "author": "Steve Jobs",
+    "category": "passion"
+  },
+  {
+    "id": 94,
+    "quote": "Believe you can and you're halfway there.",
+    "author": "Theodore Roosevelt",
+    "category": "confidence"
+  },
+  {
+    "id": 95,
+    "quote": "The best way to predict the future is to create it.",
+    "author": "Peter Drucker",
+    "category": "creation"
+  },
+  {
+    "id": 96,
+    "quote": "Don't let what you cannot do interfere with what you can do.",
+    "author": "John Wooden",
+    "category": "focus"
+  },
+  {
+    "id": 97,
+    "quote": "The difference between a successful person and others is not a lack of strength, not a lack of knowledge, but rather a lack in will.",
+    "author": "Vince Lombardi",
+    "category": "willpower"
+  },
+  {
+    "id": 98,
+    "quote": "Success is no accident. It is hard work, perseverance, learning, studying, sacrifice and most of all, love of what you are doing.",
+    "author": "Pelé",
+    "category": "success"
+  },
+  {
+    "id": 99,
+    "quote": "The more you sweat in peace, the less you bleed in war.",
+    "author": "Norman Schwarzkopf",
+    "category": "preparation"
+  },
+  {
+    "id": 100,
+    "quote": "Champions are made from something they have deep inside them—a desire, a dream, a vision.",
+    "author": "Muhammad Ali",
+    "category": "championship"
+  }
+] 
