@@ -39,7 +39,7 @@ function loadQuotes(): MotivationalQuote[] {
 
 export default async function motivationalQuotesRoutes(fastify: FastifyInstance) {
   // Get daily quote (based on current date)
-  fastify.get('/daily', async (request, reply): Promise<QuotesResponse> => {
+  fastify.get('/daily', async (request, _reply): Promise<QuotesResponse> => {
     log.info('📖 Daily quote request received:', { 
       url: request.url,
       method: request.method,
@@ -82,7 +82,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   });
 
   // Get random quote
-  fastify.get('/random', async (request, reply): Promise<QuotesResponse> => {
+  fastify.get('/random', async (_request, _reply): Promise<QuotesResponse> => {
     try {
       const quotes = loadQuotes();
       if (quotes.length === 0) {
@@ -109,7 +109,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   });
 
   // Get all quotes
-  fastify.get('/all', async (request, reply): Promise<QuotesResponse> => {
+  fastify.get('/all', async (_request, _reply): Promise<QuotesResponse> => {
     try {
       const quotes = loadQuotes();
       if (quotes.length === 0) {
@@ -135,7 +135,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   // Get quotes by category
   fastify.get<{
     Querystring: { category?: string };
-  }>('/category', async (request, reply): Promise<QuotesResponse> => {
+  }>('/category', async (request, _reply): Promise<QuotesResponse> => {
     try {
       const { category } = request.query;
       const quotes = loadQuotes();
@@ -172,7 +172,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   });
 
   // Get available categories
-  fastify.get('/categories', async (request, reply) => {
+  fastify.get('/categories', async (_request, _reply) => {
     try {
       const quotes = loadQuotes();
       const categories = [...new Set(quotes.map((quote) => quote.category))];
@@ -193,7 +193,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   // Get quote by ID
   fastify.get<{
     Params: { id: string };
-  }>('/:id', async (request, reply): Promise<QuotesResponse> => {
+  }>('/:id', async (request, _reply): Promise<QuotesResponse> => {
     try {
       const { id } = request.params;
       const quotes = loadQuotes();

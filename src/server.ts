@@ -23,6 +23,9 @@ import coachDataRoutes from './routes/coachData.js';
 import notificationsRoutes from './routes/notifications.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import motivationalQuotesRoutes from './routes/motivationalQuotes.js';
+import contactRoutes from './routes/contact.js';
+import uploadRoutes from './routes/upload.js';
+import debugRoutes from './routes/debug.js';
 
 // Load environment variables from the .env file
 import { config } from 'dotenv';
@@ -48,6 +51,9 @@ server.register(cors, {
 
 // Public routes (no authentication required)
 server.register(motivationalQuotesRoutes, { prefix: '/api/motivational-quotes' });
+server.register(contactRoutes, { prefix: '/api/contact' });
+server.register(uploadRoutes, { prefix: '/api/upload' });
+server.register(debugRoutes, { prefix: '/api/debug' });
 
 // Apply authentication middleware to all routes
 server.register(authPlugin);
