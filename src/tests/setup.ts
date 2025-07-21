@@ -1,37 +1,115 @@
 import { beforeAll, afterAll, vi } from 'vitest';
 
-// Mock Prisma at the module level
+// Create a global mock prisma instance
 const mockPrisma = {
-  sport: {
-    findMany: vi.fn().mockResolvedValue([
-      { id: '1', name: '⚽️ Soccer' },
-      { id: '2', name: '🏀 Basketball' },
-      { id: '3', name: '🏈 Football' },
-    ]),
+  user: {
+    findUnique: vi.fn().mockResolvedValue(null),
+    findMany: vi.fn().mockResolvedValue([]),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({}),
+  },
+  journal: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    count: vi.fn().mockResolvedValue(0),
+    aggregate: vi.fn().mockResolvedValue({}),
+  },
+  userQuest: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    delete: vi.fn().mockResolvedValue({}),
+    count: vi.fn().mockResolvedValue(0),
+    aggregate: vi.fn().mockResolvedValue({}),
+  },
+  userStat: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    aggregate: vi.fn().mockResolvedValue({}),
+    groupBy: vi.fn().mockResolvedValue([]),
+  },
+  team: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findUnique: vi.fn().mockResolvedValue(null),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({}),
+  },
+  teamMembership: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    findUnique: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({}),
+    count: vi.fn().mockResolvedValue(0),
+  },
+  quest: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findUnique: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+  },
+  questCategory: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findUnique: vi.fn().mockResolvedValue(null),
   },
   school: {
-    findMany: vi.fn().mockResolvedValue([
-      { id: '1', name: 'Harvard' },
-      { id: '2', name: 'Stanford' },
-      { id: '3', name: 'MIT' },
-    ]),
+    findMany: vi.fn().mockResolvedValue([]),
+    findUnique: vi.fn().mockResolvedValue(null),
   },
-  user: {
-    findUnique: vi.fn(),
-    findMany: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
+  sport: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findUnique: vi.fn().mockResolvedValue(null),
+  },
+  dailyHealthSummary: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+  },
+  sleepDetail: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+  },
+  activityDetail: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+  },
+  userForm: {
+    findMany: vi.fn().mockResolvedValue([]),
+    findFirst: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
   },
   $connect: vi.fn().mockResolvedValue(undefined),
   $disconnect: vi.fn().mockResolvedValue(undefined),
 };
 
-// Mock the prisma module globally
-vi.mock('../lib/prisma.js', () => ({
+// Mock the lib/prisma.js module globally before any imports
+vi.mock('../../../lib/prisma.js', () => ({
   prisma: mockPrisma,
   default: { prisma: mockPrisma },
 }));
+
+// Mock PrismaClient constructor to prevent real database connections
+vi.mock('@prisma/client', () => {
+  const mockPrismaClient = vi.fn().mockImplementation(() => mockPrisma);
+  return {
+    PrismaClient: mockPrismaClient,
+  };
+});
 
 // Set test environment variables
 beforeAll(() => {
