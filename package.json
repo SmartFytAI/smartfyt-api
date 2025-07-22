@@ -13,7 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
@@ -25,6 +25,11 @@
     "test:quests": "vitest run src/tests/routes/questManagement.test.ts",
     "test:leaderboard": "vitest run src/tests/routes/leaderboard.test.ts",
     "test:dashboard": "vitest run src/tests/routes/dashboard.test.ts",
+    "test:upload": "vitest run src/tests/routes/upload.test.ts",
+  
+    "test:challenge-progress": "vitest run src/tests/routes/challengeProgress.test.ts",
+  
+    "test:new-features": "vitest run src/tests/routes/upload.test.ts src/tests/routes/challengeProgress.test.ts",
     "test:verify-mocking": "node scripts/verify-mocking.js",
     "lint": "eslint src --ext .ts --fix",
     "type-check": "tsc --noEmit"

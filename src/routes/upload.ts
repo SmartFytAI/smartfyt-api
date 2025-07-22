@@ -52,6 +52,57 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
       reply.code(500).send({ error: 'Failed to generate signed URL' });
     }
   });
+
+  // POST /upload/challenge-media – Get signed URL for challenge media upload
+  fastify.post('/upload/challenge-media', async (request, reply) => {
+    const body = request.body as {
+      fileName: string;
+      fileType: string;
+      challengeId?: string;
+    };
+
+    try {
+      if (!body.fileName || !body.fileType) {
+        reply.code(400).send({ error: 'fileName and fileType are required' });
+        return;
+      }
+
+      // Validate file extension for media files
+      const fileExtension = body.fileName.split('.').pop()?.toLowerCase();
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'webm'];
+      
+      if (!allowedExtensions.includes(fileExtension || '')) {
+        reply.code(400).send({ 
+          error: `Only ${allowedExtensions.join(', ')} files are allowed for challenge media` 
+        });
+        return;
+      }
+
+      // Generate unique filename with challenge context
+      const timestamp = Date.now();
+      const uniqueFileName = `challenge-media/${body.challengeId || 'general'}/${timestamp}-${body.fileName}`;
+
+      const params = {
+        Bucket: process.env.AWS_S3_BUCKET || 'sf-pod-lam',
+        Key: uniqueFileName,
+        ContentType: body.fileType,
+      };
+
+      const command = new PutObjectCommand(params);
+      const signedUrl = await getSignedUrl(s3Client, command, {
+        expiresIn: 3600, // 1 hour
+      });
+
+      reply.send({ 
+        signedUrl,
+        fileName: uniqueFileName,
+        mediaUrl: `https://${process.env.AWS_S3_BUCKET || 'sf-pod-lam'}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${uniqueFileName}`
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({ error: 'Failed to generate signed URL for challenge media' });
+    }
+  });
 };
 
 export default uploadRoutes; 

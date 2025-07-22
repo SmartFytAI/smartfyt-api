@@ -131,6 +131,16 @@ model User {
   UserStreak             UserStreak[]
   terraUserProfile       terra_users?             @relation("UserToTerraUsers")
   sports                 Sport[]                  @relation("SportToUser")
+  // Team Challenges Gamification Relations
+  teamChallengesCreated  TeamChallenge[]          @relation("TeamChallengeCreator")
+  teamChallengeParticipants TeamChallengeParticipant[]
+  recognitionsGiven      TeamRecognition[]        @relation("RecognitionFrom")
+  recognitionsReceived   TeamRecognition[]        @relation("RecognitionTo")
+  recognitionLimits      UserRecognitionLimit[]
+  recognitionInteractions RecognitionInteraction[]
+  // Enhanced features
+  challengeProgress      ChallengeProgress[]
+  milestonesAchieved     ChallengeMilestone[]     @relation("MilestoneAchiever")
 
   @@index([schoolId])
   @@index([stripeSubscriptionId])
@@ -240,6 +250,9 @@ model Team {
   teamNotes       TeamNotes[]
   teamPosts       TeamPost[]
   userForms       UserForm[]
+  // Team Challenges Gamification Relations
+  teamChallenges  TeamChallenge[]
+  recognitions    TeamRecognition[]
 
   @@unique([name, schoolID])
   @@index([sportID])
@@ -638,6 +651,142 @@ model UserStreak {
   User           User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, type])
+}
+
+// Team Challenges Gamification Models
+
+
+model TeamChallenge {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String   // step_competition, workout, habit, skill, team_building
+  duration    Int      // days
+  createdBy   String
+  teamId      String
+  isActive    Boolean  @default(true)
+  startDate   DateTime @default(now())
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator     User     @relation("TeamChallengeCreator", fields: [createdBy], references: [id])
+  participants TeamChallengeParticipant[]
+  progress    ChallengeProgress[]
+  milestones  ChallengeMilestone[]
+
+  @@index([teamId])
+  @@index([createdBy])
+  @@index([isActive])
+}
+
+model TeamChallengeParticipant {
+  id          String        @id @default(cuid())
+  challengeId String
+  userId      String
+  status      String        @default("invited") // invited, accepted, declined, completed
+  joinedAt    DateTime?
+  completedAt DateTime?
+  score       Int           @default(0)
+  challenge   TeamChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Progress tracking
+  progress    Int           @default(0)
+  lastUpdated DateTime      @default(now())
+  progressHistory ChallengeProgress[]
+
+  @@unique([challengeId, userId])
+  @@index([challengeId])
+  @@index([userId])
+  @@index([status])
+}
+
+model TeamRecognition {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  teamId     String
+  type       String   // clap, fire, heart, flex, zap, trophy
+  message    String?  @db.VarChar(200)
+  createdAt  DateTime @default(now())
+  fromUser   User     @relation("RecognitionFrom", fields: [fromUserId], references: [id])
+  toUser     User     @relation("RecognitionTo", fields: [toUserId], references: [id])
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  interactions RecognitionInteraction[]
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([teamId])
+  @@index([type])
+}
+
+model UserRecognitionLimit {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime @db.Date
+  clapsUsed    Int      @default(0)
+  firesUsed    Int      @default(0)
+  heartsUsed   Int      @default(0)
+  flexesUsed   Int      @default(0)
+  zapsUsed     Int      @default(0)
+  trophiesUsed Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model RecognitionInteraction {
+  id             String   @id @default(cuid())
+  recognitionId  String
+  userId         String
+  interactionType String  // clap, heart, fire, etc.
+  createdAt      DateTime @default(now())
+  recognition    TeamRecognition @relation(fields: [recognitionId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([recognitionId, userId, interactionType])
+  @@index([recognitionId])
+  @@index([userId])
+  @@index([interactionType])
+}
+
+
+
+// Challenge Progress Tracking
+model ChallengeProgress {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  progress    Int
+  notes       String?
+  updatedAt   DateTime @default(now())
+  challenge   TeamChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participant TeamChallengeParticipant @relation(fields: [challengeId, userId], references: [challengeId, userId])
+
+  @@index([challengeId])
+  @@index([userId])
+  @@index([updatedAt])
+}
+
+// Challenge Milestones
+model ChallengeMilestone {
+  id          String   @id @default(cuid())
+  challengeId String
+  title       String
+  description String?
+  targetValue Int
+  achievedAt  DateTime?
+  achievedBy  String?
+  challenge   TeamChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  achiever    User?    @relation("MilestoneAchiever", fields: [achievedBy], references: [id])
+
+  @@index([challengeId])
+  @@index([achievedBy])
 }
 
 enum ChatRole {

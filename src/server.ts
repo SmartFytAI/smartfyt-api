@@ -22,6 +22,9 @@ import chatSessionsRoutes from './routes/chatSessions.js';
 import coachDataRoutes from './routes/coachData.js';
 import notificationsRoutes from './routes/notifications.js';
 import leaderboardRoutes from './routes/leaderboard.js';
+import teamChallengesRoutes from './routes/teamChallenges.js';
+
+import challengeProgressRoutes from './routes/challengeProgress.js';
 import motivationalQuotesRoutes from './routes/motivationalQuotes.js';
 import contactRoutes from './routes/contact.js';
 import uploadRoutes from './routes/upload.js';
@@ -87,6 +90,9 @@ server.register(chatSessionsRoutes);
 server.register(coachDataRoutes);
 server.register(notificationsRoutes);
 server.register(leaderboardRoutes);
+server.register(teamChallengesRoutes);
+
+server.register(challengeProgressRoutes);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3001;
 
