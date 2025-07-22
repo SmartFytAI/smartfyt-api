@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import log from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 function parseHourRange(range: string | number | null): number {
@@ -76,12 +78,13 @@ const userMetricsRoutes: FastifyPluginAsync = async (fastify) => {
         sleepHours: parseHourRange(e.sleepHours),
       }));
 
+      log.info(`Fetched metrics for user: ${userId}`, { metricsCount: metrics.length });
       reply.send(metrics);
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to fetch metrics', err, { userId });
       reply.code(500).send({ error: 'Failed to fetch metrics' });
     }
   });
 };
 
-export default userMetricsRoutes; 
+export default userMetricsRoutes;

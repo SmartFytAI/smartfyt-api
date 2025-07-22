@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import log from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const statsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -32,12 +34,13 @@ const statsRoutes: FastifyPluginAsync = async (fastify) => {
               level: 1,
             };
       });
+      log.info(`Fetched stats for user: ${userId}`, { statsCount: completeStats.length });
       reply.send(completeStats);
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to fetch stats', err, { userId });
       reply.code(500).send({ error: 'Failed to fetch stats' });
     }
   });
 };
 
-export default statsRoutes; 
+export default statsRoutes;

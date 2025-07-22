@@ -70,9 +70,8 @@ describe('Quest Management Routes', () => {
 
       const payload = expectSuccessResponse(response);
       expect(payload.success).toBe(true);
-      expect(payload.points).toBe(50);
-      expect(payload.newLevel).toBe(2);
-      expect(payload.totalPoints).toBe(150);
+      expect(payload.stats.points).toBe(150);
+      expect(payload.stats.level).toBe(2);
     });
 
     it('should create new user stat when none exists', async () => {
@@ -104,9 +103,8 @@ describe('Quest Management Routes', () => {
 
       const payload = expectSuccessResponse(response);
       expect(payload.success).toBe(true);
-      expect(payload.points).toBe(50);
-      expect(payload.newLevel).toBe(1);
-      expect(payload.totalPoints).toBe(50);
+      expect(payload.stats.points).toBe(50);
+      expect(payload.stats.level).toBe(1);
     });
 
     it('should return 400 when questId is missing', async () => {
@@ -116,7 +114,7 @@ describe('Quest Management Routes', () => {
         payload: {},
       });
 
-      expectErrorResponse(response, 400, 'questId is required');
+      expectErrorResponse(response, 400, 'Complete quest body validation failed: Required');
     });
 
     it('should return 400 when notes are too long', async () => {
@@ -130,7 +128,7 @@ describe('Quest Management Routes', () => {
         },
       });
 
-      expectErrorResponse(response, 400, 'Notes must be 280 characters or less');
+      expectErrorResponse(response, 400, 'Complete quest body validation failed: Notes must be 280 characters or less');
     });
 
     it('should return 404 when quest not found', async () => {

@@ -1,38 +1,37 @@
-import Fastify from 'fastify';
+import { resolve } from 'path';
+
 import cors from '@fastify/cors';
+import { config } from 'dotenv';
+import Fastify from 'fastify';
+
 import authPlugin from './plugins/auth.js';
-import sportsRoutes from './routes/sports.js';
-import schoolsRoutes from './routes/schools.js';
-import teamsRoutes from './routes/teams.js';
-import leadersRoutes from './routes/leaders.js';
-import userInfoRoutes from './routes/userInfo.js';
-import userMetricsRoutes from './routes/userMetrics.js';
-import journalsRoutes from './routes/journals.js';
-import questsRoutes from './routes/quests.js';
-import statsRoutes from './routes/stats.js';
-import healthRoutes from './routes/health.js';
-import dashboardRoutes from './routes/dashboard.js';
-import formsRoutes from './routes/forms.js';
-import metricsRoutes from './routes/metricsLatest.js';
-import terraRoutes from './routes/terra.js';
-import teamPostsRoutes from './routes/teamPosts.js';
-import questManagementRoutes from './routes/questManagement.js';
-import userManagementRoutes from './routes/userManagement.js';
+import challengeProgressRoutes from './routes/challengeProgress.js';
 import chatSessionsRoutes from './routes/chatSessions.js';
 import coachDataRoutes from './routes/coachData.js';
-import notificationsRoutes from './routes/notifications.js';
-import leaderboardRoutes from './routes/leaderboard.js';
-import teamChallengesRoutes from './routes/teamChallenges.js';
-
-import challengeProgressRoutes from './routes/challengeProgress.js';
-import motivationalQuotesRoutes from './routes/motivationalQuotes.js';
 import contactRoutes from './routes/contact.js';
-import uploadRoutes from './routes/upload.js';
+import dashboardRoutes from './routes/dashboard.js';
 import debugRoutes from './routes/debug.js';
-
-// Load environment variables from the .env file
-import { config } from 'dotenv';
-import { resolve } from 'path';
+import formsRoutes from './routes/forms.js';
+import healthRoutes from './routes/health.js';
+import journalsRoutes from './routes/journals.js';
+import leaderboardRoutes from './routes/leaderboard.js';
+import leadersRoutes from './routes/leaders.js';
+import metricsRoutes from './routes/metricsLatest.js';
+import motivationalQuotesRoutes from './routes/motivationalQuotes.js';
+import notificationsRoutes from './routes/notifications.js';
+import questManagementRoutes from './routes/questManagement.js';
+import questsRoutes from './routes/quests.js';
+import schoolsRoutes from './routes/schools.js';
+import sportsRoutes from './routes/sports.js';
+import statsRoutes from './routes/stats.js';
+import teamChallengesRoutes from './routes/teamChallenges.js';
+import teamPostsRoutes from './routes/teamPosts.js';
+import teamsRoutes from './routes/teams.js';
+import terraRoutes from './routes/terra.js';
+import uploadRoutes from './routes/upload.js';
+import userInfoRoutes from './routes/userInfo.js';
+import userManagementRoutes from './routes/userManagement.js';
+import userMetricsRoutes from './routes/userMetrics.js';
 import log from './utils/logger.js';
 
 // Load environment variables from the project .env file
@@ -62,8 +61,8 @@ server.register(debugRoutes, { prefix: '/api/debug' });
 server.register(authPlugin);
 
 // Public health check endpoint (handled in auth plugin)
-server.get('/health', async () => ({ 
-  status: 'ok', 
+server.get('/health', async () => ({
+  status: 'ok',
   timestamp: new Date().toISOString(),
   version: '1.0.0'
 }));
@@ -99,9 +98,9 @@ const port = process.env.PORT ? Number(process.env.PORT) : 3001;
 server
   .listen({ port, host: '0.0.0.0' })
   .then((address: string) => {
-    console.log(`API server listening at ${address}`);
+    log.info(`API server listening at ${address}`);
   })
   .catch((err: unknown) => {
-    console.error(err);
+    log.error('Failed to start server', err);
     process.exit(1);
   });

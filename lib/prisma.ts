@@ -1,9 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import log from '../src/utils/logger.js';
 
 const prismaClientSingleton = () => {
-  console.log('Initializing Prisma client...');
-  console.log('Database URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
-  console.log('Direct URL:', process.env.DIRECT_URL ? 'Set' : 'Not set');
+  log.info('Initializing Prisma client...');
+  log.info('Database URL:', { configured: !!process.env.DATABASE_URL });
+  log.info('Direct URL:', { configured: !!process.env.DIRECT_URL });
 
   return new PrismaClient({
     log: ['error', 'warn', 'query'],
@@ -27,10 +28,10 @@ if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
 prisma
   .$connect()
   .then(() => {
-    console.log('Successfully connected to the database');
+    log.info('Successfully connected to the database');
   })
   .catch((error) => {
-    console.error('Failed to connect to the database:', error);
+    log.error('Failed to connect to the database', error);
   });
 
 export { prisma };

@@ -1,6 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
-// ESM↔CJS interop
+
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, contactInquiryBodySchema } from '../plugins/validation.js';
+import { log } from '../utils/logger.js';
+// ESM↔CJS interop
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 /**
@@ -9,19 +12,8 @@ const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js'
 const contactRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /contact – Submit contact inquiry
   fastify.post('/contact', async (request, reply) => {
-    const body = request.body as {
-      name: string;
-      email: string;
-      organization?: string;
-      planType?: string;
-      message: string;
-    };
-
     try {
-      if (!body.name || !body.email || !body.organization || !body.planType || !body.message) {
-        reply.code(400).send({ error: 'Missing required fields: name, email, organization, planType, message' });
-        return;
-      }
+      const body = validateRequest(contactInquiryBodySchema, request.body, 'Contact inquiry body');
 
       // Create contact inquiry
       const inquiry = await prisma.contactInquiry.create({
@@ -34,13 +26,18 @@ const contactRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
 
-      reply.code(201).send({ 
-        success: true, 
+      log.info(`Contact inquiry submitted: ${body.email}`);
+      reply.code(201).send({
+        success: true,
         message: 'Inquiry submitted successfully',
-        inquiry 
+        inquiry
       });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to submit inquiry', err, { body: request.body });
       reply.code(500).send({ error: 'Failed to submit inquiry' });
     }
   });
@@ -52,12 +49,13 @@ const contactRoutes: FastifyPluginAsync = async (fastify) => {
         orderBy: { createdAt: 'desc' }
       });
 
+      log.info(`Fetched ${inquiries.length} contact inquiries`);
       reply.send(inquiries);
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to fetch inquiries', err);
       reply.code(500).send({ error: 'Failed to fetch inquiries' });
     }
   });
 };
 
-export default contactRoutes; 
+export default contactRoutes;

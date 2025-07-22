@@ -1,5 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, teamIdParamSchema, createTeamPostBodySchema } from '../plugins/validation.js';
+import log from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -13,10 +16,11 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /teams/:teamId/posts – get team posts
   fastify.get('/teams/:teamId/posts', async (request, reply) => {
-    const { teamId } = request.params as { teamId: string };
     try {
+      const params = validateRequest(teamIdParamSchema, request.params, 'Get team posts params');
+
       const posts = await prisma.teamPost.findMany({
-        where: { teamID: teamId },
+        where: { teamID: params.teamId },
         include: {
           author: {
             select: {
@@ -35,33 +39,29 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
         formattedContent: formatContent(post.content),
       }));
 
+      log.info(`Fetched team posts for team: ${params.teamId}`, { postCount: formattedPosts.length });
       reply.send(formattedPosts);
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch team posts', err, { teamId: request.params });
       reply.code(500).send({ error: 'Failed to fetch team posts' });
     }
   });
 
   // POST /teams/:teamId/posts – create team post
   fastify.post('/teams/:teamId/posts', async (request, reply) => {
-    const { teamId } = request.params as { teamId: string };
-    const body = request.body as {
-      title: string;
-      content: string;
-      authorId: string;
-    };
-
     try {
-      if (!body.title || !body.content || !body.authorId) {
-        reply.code(400).send({ error: 'Missing required fields: title, content, authorId' });
-        return;
-      }
+      const params = validateRequest(teamIdParamSchema, request.params, 'Create team post params');
+      const body = validateRequest(createTeamPostBodySchema, request.body, 'Create team post body');
 
       // Check if the user is a member for this team
       const teamMember = await prisma.teamMembership.findFirst({
         where: {
           userId: body.authorId,
-          teamId,
+          teamId: params.teamId,
         },
       });
 
@@ -75,7 +75,7 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           title: body.title,
           content: body.content,
-          teamID: teamId,
+          teamID: params.teamId,
           authorID: body.authorId,
           published: true,
         },
@@ -94,56 +94,47 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
       // TODO: Send notifications to team members (exclude author)
       // This could be handled by a separate notification service or webhook
 
+      log.info(`Created team post for team: ${params.teamId}`, {
+        postId: newPost.id,
+        authorId: body.authorId
+      });
+
       reply.code(201).send({
         ...newPost,
         formattedContent: formatContent(newPost.content),
       });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to create team post', err, { teamId: request.params });
       reply.code(500).send({ error: 'Failed to create team post' });
     }
   });
 
   // PUT /teams/:teamId/posts/:postId – update team post
   fastify.put('/teams/:teamId/posts/:postId', async (request, reply) => {
-    const { teamId, postId } = request.params as { teamId: string; postId: string };
-    const body = request.body as {
-      title: string;
-      content: string;
-      userId: string;
-    };
-
     try {
-      if (!body.title || !body.content || !body.userId) {
-        reply.code(400).send({ error: 'Missing required fields: title, content, userId' });
+      const params = validateRequest(teamIdParamSchema, request.params, 'Update team post params');
+      const body = validateRequest(createTeamPostBodySchema, request.body, 'Update team post body');
+      const { postId } = request.params as { postId: string };
+
+      // Check if the user is the author of the post
+      const existingPost = await prisma.teamPost.findFirst({
+        where: {
+          id: postId,
+          teamID: params.teamId,
+          authorID: body.authorId,
+        },
+      });
+
+      if (!existingPost) {
+        reply.code(404).send({ error: 'Post not found or you are not the author' });
         return;
       }
 
-      // Check if the user is the author or a coach
-      const [post, isCoach] = await Promise.all([
-        prisma.teamPost.findUnique({
-          where: { id: postId },
-          select: { authorID: true, teamID: true },
-        }),
-        prisma.teamMembership.findFirst({
-          where: {
-            userId: body.userId,
-            teamId,
-            role: 'coach',
-          },
-        }),
-      ]);
-
-      if (!post) {
-        reply.code(404).send({ error: 'Post not found' });
-        return;
-      }
-
-      if (post.authorID !== body.userId && !isCoach) {
-        reply.code(403).send({ error: 'You can only edit your own posts or you must be a coach' });
-        return;
-      }
-
+      // Update the post
       const updatedPost = await prisma.teamPost.update({
         where: { id: postId },
         data: {
@@ -162,52 +153,49 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
 
+      log.info(`Updated team post: ${postId}`, {
+        teamId: params.teamId,
+        authorId: body.authorId
+      });
+
       reply.send({
         ...updatedPost,
         formattedContent: formatContent(updatedPost.content),
       });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to update team post', err, { teamId: request.params, postId: request.params });
       reply.code(500).send({ error: 'Failed to update team post' });
     }
   });
 
   // DELETE /teams/:teamId/posts/:postId – delete team post
   fastify.delete('/teams/:teamId/posts/:postId', async (request, reply) => {
-    const { teamId, postId } = request.params as { teamId: string; postId: string };
-    const { userId } = request.query as { userId: string };
-
     try {
-      if (!userId) {
-        reply.code(400).send({ error: 'userId query parameter is required' });
+      const params = validateRequest(teamIdParamSchema, request.params, 'Delete team post params');
+      const { postId } = request.params as { postId: string };
+      const { authorId } = request.body as { authorId: string };
+
+      if (!authorId) {
+        reply.code(400).send({ error: 'Author ID is required' });
         return;
       }
 
-      // Check if the user is a coach for this team
-      const isCoach = await prisma.teamMembership.findFirst({
+      // Check if the user is the author of the post
+      const existingPost = await prisma.teamPost.findFirst({
         where: {
-          userId,
-          teamId,
-          role: 'coach',
+          id: postId,
+          teamID: params.teamId,
+          authorID: authorId,
         },
       });
 
-      // If the user is not a coach, check if they are the author of the post
-      if (!isCoach) {
-        const post = await prisma.teamPost.findUnique({
-          where: { id: postId },
-          select: { authorID: true },
-        });
-
-        if (!post) {
-          reply.code(404).send({ error: 'Post not found' });
-          return;
-        }
-
-        if (post.authorID !== userId) {
-          reply.code(403).send({ error: "You don't have permission to delete this post" });
-          return;
-        }
+      if (!existingPost) {
+        reply.code(404).send({ error: 'Post not found or you are not the author' });
+        return;
       }
 
       // Delete the post
@@ -215,12 +203,21 @@ const teamPostsRoutes: FastifyPluginAsync = async (fastify) => {
         where: { id: postId },
       });
 
-      reply.code(204).send();
+      log.info(`Deleted team post: ${postId}`, {
+        teamId: params.teamId,
+        authorId
+      });
+
+      reply.send({ success: true, message: 'Post deleted successfully' });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to delete team post', err, { teamId: request.params, postId: request.params });
       reply.code(500).send({ error: 'Failed to delete team post' });
     }
   });
 };
 
-export default teamPostsRoutes; 
+export default teamPostsRoutes;

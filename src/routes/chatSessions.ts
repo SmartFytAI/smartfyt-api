@@ -1,5 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, userIdParamSchema, chatMessagesBodySchema } from '../plugins/validation.js';
+import { log } from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -13,29 +16,19 @@ const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
       case 'system':
         return 'system';
       default:
-        console.warn(`Unsupported chat role encountered: ${role}. Saving as system.`);
+        log.warn(`Unsupported chat role encountered: ${role}. Saving as system.`);
         return 'system';
     }
   }
 
   // POST /users/:userId/chat-sessions – save a chat session
   fastify.post('/users/:userId/chat-sessions', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-    const body = request.body as {
-      messages: Array<{
-        role: string;
-        content: string | object;
-      }>;
-    };
-
     try {
-      if (!body.messages || !Array.isArray(body.messages)) {
-        reply.code(400).send({ error: 'messages array is required' });
-        return;
-      }
+      const params = validateRequest(userIdParamSchema, request.params, 'Create chat session params');
+      const body = validateRequest(chatMessagesBodySchema, request.body, 'Create chat session body');
 
-      console.log(`Attempting to save chat session for userId: ${userId}`);
-      console.log(`Messages received: ${body.messages.length}`);
+      log.info(`Attempting to save chat session for userId: ${params.userId}`);
+      log.info(`Messages received: ${body.messages.length}`);
 
       // Filter out tool/function messages if you don't want to save them
       const messagesToSave = body.messages.filter(
@@ -44,7 +37,7 @@ const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Don't save empty chats or chats with only system prompts
       if (messagesToSave.filter((m) => m.role === 'user' || m.role === 'assistant').length === 0) {
-        console.log('No user/assistant messages found, skipping save.');
+        log.info('No user/assistant messages found, skipping save.');
         reply.send({ success: true });
         return;
       }
@@ -52,11 +45,11 @@ const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
       // Create the chat session
       const chatSession = await prisma.chatSession.create({
         data: {
-          userId,
+          userId: params.userId,
         },
       });
 
-      console.log(`Created ChatSession with ID: ${chatSession.id}`);
+      log.info(`Created ChatSession with ID: ${chatSession.id}`);
 
       // Prepare messages for bulk insertion
       const chatMessagesData = messagesToSave.map((message) => ({
@@ -71,30 +64,29 @@ const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
         data: chatMessagesData,
       });
 
-      console.log(`Saved ${chatMessagesData.length} messages for session ${chatSession.id}`);
+      log.info(`Saved ${chatMessagesData.length} messages for session ${chatSession.id}`);
       reply.send({ success: true, sessionId: chatSession.id });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to save chat session', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to save chat session' });
     }
   });
 
   // GET /users/:userId/chat-sessions – get previous chat sessions
   fastify.get('/users/:userId/chat-sessions', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-    const { limit = '3' } = request.query as { limit?: string };
-
     try {
-      if (!userId) {
-        reply.code(400).send({ error: 'User ID is required' });
-        return;
-      }
+      const params = validateRequest(userIdParamSchema, request.params, 'Get chat sessions params');
+    const { limit = '3' } = request.query as { limit?: string };
 
       const limitNumber = parseInt(limit, 10) || 3;
 
       const sessions = await prisma.chatSession.findMany({
         where: {
-          userId,
+          userId: params.userId,
         },
         orderBy: {
           createdAt: 'desc', // Get the most recent sessions first
@@ -109,13 +101,17 @@ const chatSessionsRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
 
-      console.log(`Fetched ${sessions.length} previous chat sessions for userId: ${userId}`);
+      log.info(`Fetched ${sessions.length} previous chat sessions for userId: ${params.userId}`);
       reply.send({ sessions });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch chat sessions', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch chat sessions' });
     }
   });
 };
 
-export default chatSessionsRoutes; 
+export default chatSessionsRoutes;

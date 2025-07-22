@@ -141,7 +141,7 @@ describe('Teams Routes', () => {
 
       const payload = expectSuccessResponse(response);
       expect(payload).toHaveLength(1);
-      expect(payload[0].user.id).toBe('user1');
+      expect(payload[0].id).toBe('user1');
       expect(payload[0].role).toBe('member');
     });
 

@@ -205,7 +205,7 @@ describe('Journals Routes', () => {
         payload: incompleteData,
       });
 
-      expectErrorResponse(response, 400, 'userId and title are required');
+      expectErrorResponse(response, 400, 'Create journal body validation failed: Required');
     });
 
     it('should handle database errors gracefully', async () => {

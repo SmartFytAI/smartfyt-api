@@ -1,6 +1,9 @@
-import { FastifyPluginAsync } from 'fastify';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { FastifyPluginAsync } from 'fastify';
+
+import { validateRequest, signedUrlBodySchema, challengeMediaBodySchema } from '../plugins/validation.js';
+import { log } from '../utils/logger.js';
 
 /**
  * File upload routes
@@ -17,16 +20,8 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /upload/signed-url – Get signed URL for file upload
   fastify.post('/upload/signed-url', async (request, reply) => {
-    const body = request.body as {
-      fileName: string;
-      fileType: string;
-    };
-
     try {
-      if (!body.fileName || !body.fileType) {
-        reply.code(400).send({ error: 'fileName and fileType are required' });
-        return;
-      }
+      const body = validateRequest(signedUrlBodySchema, request.body, 'Get signed URL body');
 
       // Validate file extension
       const fileExtension = body.fileName.split('.').pop()?.toLowerCase();
@@ -46,34 +41,30 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
         expiresIn: 3600, // 1 hour
       });
 
+      log.info(`Generated signed URL for file: ${body.fileName}`);
       reply.send({ signedUrl });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to generate signed URL', err, { body: request.body });
       reply.code(500).send({ error: 'Failed to generate signed URL' });
     }
   });
 
   // POST /upload/challenge-media – Get signed URL for challenge media upload
   fastify.post('/upload/challenge-media', async (request, reply) => {
-    const body = request.body as {
-      fileName: string;
-      fileType: string;
-      challengeId?: string;
-    };
-
     try {
-      if (!body.fileName || !body.fileType) {
-        reply.code(400).send({ error: 'fileName and fileType are required' });
-        return;
-      }
+      const body = validateRequest(challengeMediaBodySchema, request.body, 'Challenge media upload body');
 
       // Validate file extension for media files
       const fileExtension = body.fileName.split('.').pop()?.toLowerCase();
       const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'webm'];
-      
+
       if (!allowedExtensions.includes(fileExtension || '')) {
-        reply.code(400).send({ 
-          error: `Only ${allowedExtensions.join(', ')} files are allowed for challenge media` 
+        reply.code(400).send({
+          error: `Only ${allowedExtensions.join(', ')} files are allowed for challenge media`
         });
         return;
       }
@@ -93,16 +84,21 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
         expiresIn: 3600, // 1 hour
       });
 
-      reply.send({ 
+      log.info(`Generated challenge media signed URL for file: ${uniqueFileName}`);
+      reply.send({
         signedUrl,
         fileName: uniqueFileName,
         mediaUrl: `https://${process.env.AWS_S3_BUCKET || 'sf-pod-lam'}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${uniqueFileName}`
       });
     } catch (err) {
-      fastify.log.error(err);
-      reply.code(500).send({ error: 'Failed to generate signed URL for challenge media' });
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to generate challenge media signed URL', err, { body: request.body });
+      reply.code(500).send({ error: 'Failed to generate challenge media signed URL' });
     }
   });
 };
 
-export default uploadRoutes; 
+export default uploadRoutes;

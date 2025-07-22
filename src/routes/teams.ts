@@ -1,6 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
+
 // ESM↔CJS interop
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, userIdParamSchema, teamIdParamSchema } from '../plugins/validation.js';
+import log from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 /**
@@ -9,10 +12,11 @@ const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js'
 const teamsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /users/:userId/teams – Returns teams a user belongs to
   fastify.get('/users/:userId/teams', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
     try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Get user teams params');
+
       const memberships = await prisma.teamMembership.findMany({
-        where: { userId },
+        where: { userId: params.userId },
         select: {
           team: {
             select: {
@@ -36,9 +40,14 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
         school: m.team.school,
       }));
 
+      log.info(`Fetched teams for user: ${params.userId}`, { teamCount: teams.length });
       reply.send(teams);
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch teams', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch teams' });
     }
   });
@@ -71,19 +80,21 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
         memberCount: team._count.memberships
       }));
 
+      log.info('Fetched all teams', { teamCount: teamsWithMemberCount.length });
       reply.send(teamsWithMemberCount);
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to fetch all teams', err);
       reply.code(500).send({ error: 'Failed to fetch all teams' });
     }
   });
 
   // GET /teams/:teamId/members – Get team members
   fastify.get('/teams/:teamId/members', async (request, reply) => {
-    const { teamId } = request.params as { teamId: string };
     try {
+      const params = validateRequest(teamIdParamSchema, request.params, 'Get team members params');
+
       const memberships = await prisma.teamMembership.findMany({
-        where: { teamId },
+        where: { teamId: params.teamId },
         select: {
           userId: true,
           role: true,
@@ -103,15 +114,24 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
       });
 
       const members = memberships.map(membership => ({
-        userId: membership.userId,
+        id: membership.user.id,
+        firstName: membership.user.firstName,
+        lastName: membership.user.lastName,
+        email: membership.user.email,
+        profileImage: membership.user.profileImage,
+        activeRole: membership.user.activeRole,
         role: membership.role,
-        joinedAt: membership.joinedAt,
-        user: membership.user
+        joinedAt: membership.joinedAt
       }));
 
+      log.info(`Fetched team members for team: ${params.teamId}`, { memberCount: members.length });
       reply.send(members);
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch team members', err, { teamId: request.params });
       reply.code(500).send({ error: 'Failed to fetch team members' });
     }
   });
@@ -316,4 +336,4 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-export default teamsRoutes; 
+export default teamsRoutes;

@@ -24,15 +24,15 @@ export const log = {
   debug: (message: string, context?: any) => {
     logger.debug({ ...context }, message);
   },
-  
+
   info: (message: string, context?: any) => {
     logger.info({ ...context }, message);
   },
-  
+
   warn: (message: string, context?: any) => {
     logger.warn({ ...context }, message);
   },
-  
+
   error: (message: string, error?: Error | unknown, context?: any) => {
     if (error instanceof Error) {
       logger.error({
@@ -53,11 +53,11 @@ export const log = {
     success: (userId: string, context?: any) => {
       logger.info({ userId, ...context }, 'User authenticated successfully');
     },
-    
+
     failure: (reason: string, context?: any) => {
       logger.warn({ reason, ...context }, 'Authentication failed');
     },
-    
+
     tokenValidation: (success: boolean, context?: any) => {
       if (success) {
         logger.debug({ ...context }, 'JWT token validated successfully');
@@ -72,15 +72,15 @@ export const log = {
     start: (method: string, url: string, context?: any) => {
       logger.info({ method, url, ...context }, 'API request started');
     },
-    
+
     complete: (method: string, url: string, statusCode: number, duration: number, context?: any) => {
       const level = statusCode >= 400 ? 'warn' : 'info';
-      logger[level]({ 
-        method, 
-        url, 
-        statusCode, 
+      logger[level]({
+        method,
+        url,
+        statusCode,
         duration,
-        ...context 
+        ...context
       }, `API request completed in ${duration}ms`);
     },
 
@@ -101,14 +101,14 @@ export const log = {
   // Database operation logging
   database: {
     query: (operation: string, table: string, duration?: number, context?: any) => {
-      logger.debug({ 
-        operation, 
-        table, 
+      logger.debug({
+        operation,
+        table,
         duration,
-        ...context 
+        ...context
       }, `Database ${operation} on ${table}${duration ? ` (${duration}ms)` : ''}`);
     },
-    
+
     error: (operation: string, table: string, error: Error, context?: any) => {
       logger.error({
         operation,
@@ -127,4 +127,4 @@ export const log = {
 // Export the raw logger for advanced use cases
 export { logger };
 
-export default log; 
+export default log;

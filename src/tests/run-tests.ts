@@ -2,6 +2,7 @@
 
 import { execSync } from 'child_process';
 import { resolve } from 'path';
+import log from '../utils/logger.js';
 
 const TEST_DIR = resolve(__dirname);
 
@@ -56,7 +57,7 @@ const TEST_SUITES: TestConfig[] = [
 
 function runTests(pattern: string, options: string[] = []) {
   const command = `npx vitest run ${pattern} ${options.join(' ')}`;
-  console.log(`Running: ${command}`);
+  log.info(`Running: ${command}`);
   
   try {
     execSync(command, { 
@@ -65,36 +66,36 @@ function runTests(pattern: string, options: string[] = []) {
     });
     return true;
   } catch (error) {
-    console.error(`Test run failed for pattern: ${pattern}`);
+    log.error(`Test run failed for pattern: ${pattern}`, error);
     return false;
   }
 }
 
 function runAllTests(options: string[] = []) {
-  console.log('🧪 Running all API tests...\n');
+  log.info('🧪 Running all API tests...\n');
   
   let passed = 0;
   let failed = 0;
   
   for (const suite of TEST_SUITES) {
-    console.log(`\n📋 Running ${suite.name} tests...`);
-    console.log(`   ${suite.description}`);
+    log.info(`\n📋 Running ${suite.name} tests...`);
+    log.info(`   ${suite.description}`);
     
     const success = runTests(suite.pattern, options);
     
     if (success) {
-      console.log(`✅ ${suite.name} tests passed\n`);
+      log.info(`✅ ${suite.name} tests passed\n`);
       passed++;
     } else {
-      console.log(`❌ ${suite.name} tests failed\n`);
+      log.info(`❌ ${suite.name} tests failed\n`);
       failed++;
     }
   }
   
-  console.log('\n📊 Test Summary:');
-  console.log(`   Passed: ${passed}`);
-  console.log(`   Failed: ${failed}`);
-  console.log(`   Total: ${TEST_SUITES.length}`);
+  log.info('\n📊 Test Summary:');
+  log.info(`   Passed: ${passed}`);
+  log.info(`   Failed: ${failed}`);
+  log.info(`   Total: ${TEST_SUITES.length}`);
   
   if (failed > 0) {
     process.exit(1);
@@ -105,16 +106,16 @@ function runSpecificSuite(suiteName: string, options: string[] = []) {
   const suite = TEST_SUITES.find(s => s.name === suiteName);
   
   if (!suite) {
-    console.error(`❌ Test suite '${suiteName}' not found`);
-    console.log('\nAvailable test suites:');
+    log.error(`❌ Test suite '${suiteName}' not found`);
+    log.info('\nAvailable test suites:');
     TEST_SUITES.forEach(s => {
-      console.log(`   ${s.name}: ${s.description}`);
+      log.info(`   ${s.name}: ${s.description}`);
     });
     process.exit(1);
   }
   
-  console.log(`🧪 Running ${suite.name} tests...`);
-  console.log(`   ${suite.description}\n`);
+  log.info(`🧪 Running ${suite.name} tests...`);
+  log.info(`   ${suite.description}\n`);
   
   const success = runTests(suite.pattern, options);
   

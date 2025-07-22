@@ -73,7 +73,7 @@ describe('Leaderboard Routes', () => {
         url: '/teams//leaderboard',
       });
 
-      expectErrorResponse(response, 400, 'Team ID is required');
+      expectErrorResponse(response, 400, 'Get team leaderboard params validation failed: Team ID is required');
     });
 
     it('should handle empty team leaderboard', async () => {

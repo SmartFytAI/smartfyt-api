@@ -1,25 +1,24 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import {
+  validateRequest,
+  notificationBodySchema,
+  userIdParamSchema,
+  notificationQuerySchema,
+  notificationIdWithUserIdSchema
+} from '../plugins/validation.js';
+import log from '../utils/logger.js';
+
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /notifications – create a notification
   fastify.post('/notifications', async (request, reply) => {
-    const body = request.body as {
-      userId: string;
-      message: string;
-      type?: string;
-      link?: string;
-      actorId?: string;
-    };
-
     try {
-      if (!body.userId || !body.message) {
-        reply.code(400).send({ error: 'userId and message are required' });
-        return;
-      }
+      const body = validateRequest(notificationBodySchema, request.body, 'Create notification');
 
-      console.log('[API] createNotification called with data:', body);
+      log.info('[API] createNotification called with data:', { body });
 
       const notification = await prisma.notification.create({
         data: {
@@ -32,36 +31,39 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
 
-      console.log('[API] Notification created:', notification.id);
+      log.info('[API] Notification created:', { notificationId: notification.id });
       reply.code(201).send({ success: true, notification });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        log.warn('[API] Validation error in createNotification:', { error: err.message });
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to create notification', err, { body: request.body });
       reply.code(500).send({ error: 'Failed to create notification' });
     }
   });
 
   // GET /users/:userId/notifications – get user notifications
   fastify.get('/users/:userId/notifications', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-    const { limit = '20', onlyUnread = 'false' } = request.query as { 
-      limit?: string; 
-      onlyUnread?: string; 
-    };
-
     try {
-      console.log(`[API] getNotifications called for user: ${userId}`);
+      const params = validateRequest(userIdParamSchema, request.params, 'Get notifications params');
+      const query = validateRequest(notificationQuerySchema, request.query, 'Get notifications query');
 
-      const whereClause: any = { userId };
-      if (onlyUnread === 'true') {
+      log.info(`[API] getNotifications called for user: ${params.userId}`);
+
+      const whereClause: any = { userId: params.userId };
+      const onlyUnread = query.onlyUnread === 'true';
+      const limit = parseInt(query.limit || '20', 10);
+
+      if (onlyUnread) {
         whereClause.read = false;
       }
-
-      const limitNumber = parseInt(limit, 10) || 20;
 
       const notifications = await prisma.notification.findMany({
         where: whereClause,
         orderBy: { createdAt: 'desc' },
-        take: limitNumber,
+        take: limit,
         include: {
           actor: {
             select: {
@@ -74,87 +76,92 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
 
-      console.log(`[API] Found ${notifications.length} notifications for user ${userId}`);
+      log.info(`[API] Found ${notifications.length} notifications for user ${params.userId}`);
       reply.send({ success: true, notifications });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        log.warn('[API] Validation error in getNotifications:', { error: err.message });
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch notifications', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch notifications' });
     }
   });
 
   // GET /users/:userId/notifications/count – get unread notification count
   fastify.get('/users/:userId/notifications/count', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-
     try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Get notification count params');
+
       const count = await prisma.notification.count({
         where: {
-          userId,
+          userId: params.userId,
           read: false,
         },
       });
 
       reply.send({ success: true, count });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        log.warn('[API] Validation error in getNotificationCount:', { error: err.message });
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch notification count', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch notification count' });
     }
   });
 
   // PUT /users/:userId/notifications/:notificationId/read – mark notification as read
   fastify.put('/users/:userId/notifications/:notificationId/read', async (request, reply) => {
-    const { userId, notificationId } = request.params as { 
-      userId: string; 
-      notificationId: string; 
-    };
-
     try {
-      console.log(`[API] markNotificationRead called for id: ${notificationId} by user: ${userId}`);
+      const params = validateRequest(notificationIdWithUserIdSchema, request.params, 'Mark notification read params');
 
-      const updated = await prisma.notification.updateMany({
+      const notification = await prisma.notification.update({
         where: {
-          id: notificationId,
-          userId, // Ensure user can only mark their own notifications
+          id: params.notificationId,
+          userId: params.userId,
         },
-        data: { read: true },
+        data: {
+          read: true,
+        },
       });
 
-      if (updated.count === 0) {
-        console.warn(`[API] Notification ${notificationId} not found or user ${userId} unauthorized.`);
-        reply.code(404).send({ error: 'Notification not found or unauthorized' });
+      reply.send({ success: true, notification });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        log.warn('[API] Validation error in markNotificationRead:', { error: err.message });
+        reply.code(400).send({ error: err.message });
         return;
       }
-
-      console.log(`[API] Marked notification ${notificationId} as read.`);
-      reply.send({ success: true });
-    } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to mark notification as read', err, { params: request.params });
       reply.code(500).send({ error: 'Failed to mark notification as read' });
     }
   });
 
-  // PUT /users/:userId/notifications/read-all – mark all notifications as read
-  fastify.put('/users/:userId/notifications/read-all', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-
+  // DELETE /users/:userId/notifications – delete all user notifications
+  fastify.delete('/users/:userId/notifications', async (request, reply) => {
     try {
-      console.log(`[API] markAllNotificationsRead called for user: ${userId}`);
+      const params = validateRequest(userIdParamSchema, request.params, 'Delete notifications params');
 
-      const updated = await prisma.notification.updateMany({
+      await prisma.notification.deleteMany({
         where: {
-          userId,
-          read: false,
+          userId: params.userId,
         },
-        data: { read: true },
       });
 
-      console.log(`[API] Marked ${updated.count} notifications as read for user ${userId}.`);
-      reply.send({ success: true, count: updated.count });
+      reply.send({ success: true, message: 'All notifications deleted' });
     } catch (err) {
-      fastify.log.error(err);
-      reply.code(500).send({ error: 'Failed to mark all notifications as read' });
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        log.warn('[API] Validation error in deleteNotifications:', { error: err.message });
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to delete notifications', err, { userId: request.params });
+      reply.code(500).send({ error: 'Failed to delete notifications' });
     }
   });
 };
 
-export default notificationsRoutes; 
+export default notificationsRoutes;

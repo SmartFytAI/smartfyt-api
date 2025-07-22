@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import log from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const userInfoRoutes: FastifyPluginAsync = async (fastify) => {
@@ -46,12 +48,13 @@ const userInfoRoutes: FastifyPluginAsync = async (fastify) => {
         coachName: userForm?.coachName ?? '',
         coachEmail: userForm?.coachEmail ?? '',
       };
+      log.info(`Fetched user info for user: ${userId}`);
       reply.send(payload);
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to fetch user info', err, { userId });
       reply.code(500).send({ error: 'Failed to fetch user info' });
     }
   });
 };
 
-export default userInfoRoutes; 
+export default userInfoRoutes;

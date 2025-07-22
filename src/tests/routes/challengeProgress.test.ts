@@ -121,7 +121,7 @@ describe('Challenge Progress Routes', () => {
         },
       });
 
-      expectErrorResponse(response, 400, 'userId and progress are required');
+      expectErrorResponse(response, 400, 'Update challenge progress body validation failed: Required, Required');
     });
 
     it('should return 404 for non-existent participant', async () => {

@@ -1,6 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
+
 // ESM↔CJS interop for prisma singleton
 import prismaModule from '../../lib/prisma.js';
+import log from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 /**
@@ -13,12 +15,13 @@ const schoolsRoutes: FastifyPluginAsync = async (fastify) => {
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       });
+      log.info(`Fetched ${schools.length} schools`);
       reply.send(schools);
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to fetch schools', err);
       reply.code(500).send({ error: 'Failed to fetch schools' });
     }
   });
 };
 
-export default schoolsRoutes; 
+export default schoolsRoutes;

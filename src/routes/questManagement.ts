@@ -1,27 +1,16 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, userIdParamSchema, completeQuestBodySchema } from '../plugins/validation.js';
+import log from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /users/:userId/quests/complete – complete a quest
   fastify.post('/users/:userId/quests/complete', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-    const body = request.body as {
-      questId: string;
-      notes?: string;
-    };
-
     try {
-      if (!body.questId) {
-        reply.code(400).send({ error: 'questId is required' });
-        return;
-      }
-
-      const notes = body.notes || '';
-      if (notes.length > 280) {
-        reply.code(400).send({ error: 'Notes must be 280 characters or less' });
-        return;
-      }
+      const params = validateRequest(userIdParamSchema, request.params, 'Complete quest params');
+      const body = validateRequest(completeQuestBodySchema, request.body, 'Complete quest body');
 
       // First check if the quest exists
       const questExists = await prisma.quest.findUnique({
@@ -36,7 +25,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
       // Find the user quest with assigned status
       const userQuest = await prisma.userQuest.findFirst({
         where: {
-          userId,
+          userId: params.userId,
           questId: body.questId,
           status: 'assigned',
         },
@@ -60,14 +49,14 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           status: 'completed',
           completedAt: new Date(),
-          notes,
+          notes: body.notes,
         },
       });
 
       // Update or create user stats
       let userStat = await prisma.userStat.findFirst({
         where: {
-          userId,
+          userId: params.userId,
           categoryId: userQuest.quest.categoryId,
         },
       });
@@ -88,7 +77,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
         // Create new stat
         userStat = await prisma.userStat.create({
           data: {
-            userId,
+            userId: params.userId,
             categoryId: userQuest.quest.categoryId,
             points: userQuest.quest.pointValue,
             level: 1,
@@ -96,15 +85,33 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      log.info(`Completed quest for user: ${params.userId}`, {
+        questId: body.questId,
+        points: userQuest.quest.pointValue,
+        category: userQuest.quest.category.name
+      });
+
       reply.send({
         success: true,
         message: 'Quest completed successfully',
-        points: userQuest.quest.pointValue,
-        newLevel: userStat.level,
-        totalPoints: userStat.points,
+        quest: {
+          id: userQuest.quest.id,
+          title: userQuest.quest.title,
+          description: userQuest.quest.description,
+          pointValue: userQuest.quest.pointValue,
+          categoryName: userQuest.quest.category.name,
+        },
+        stats: {
+          points: userStat.points,
+          level: userStat.level,
+        },
       });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to complete quest', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to complete quest' });
     }
   });
@@ -227,7 +234,7 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /users/:userId/quests/completed – get completed quests
   fastify.get('/users/:userId/quests/completed', async (request, reply) => {
     const { userId } = request.params as { userId: string };
-    
+
     try {
       const completedQuests = await prisma.userQuest.findMany({
         where: {
@@ -452,4 +459,4 @@ const questManagementRoutes: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-export default questManagementRoutes; 
+export default questManagementRoutes;

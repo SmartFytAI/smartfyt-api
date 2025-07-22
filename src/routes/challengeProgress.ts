@@ -1,5 +1,8 @@
-import { FastifyPluginAsync } from 'fastify';
 import { PrismaClient } from '@prisma/client';
+import { FastifyPluginAsync } from 'fastify';
+
+import { validateRequest, challengeIdWithTeamIdSchema, challengeProgressUpdateBodySchema } from '../plugins/validation.js';
+import log from '../utils/logger.js';
 
 const prisma = new PrismaClient();
 
@@ -10,26 +13,14 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /teams/:teamId/challenges/:challengeId/progress – Update challenge progress
   fastify.post('/teams/:teamId/challenges/:challengeId/progress', async (request, reply) => {
     try {
-      const { teamId, challengeId } = request.params as { teamId: string; challengeId: string };
-      const body = request.body as {
-        userId: string;
-        progress: number;
-        notes?: string;
-      };
-
-      if (!body.userId || body.progress === undefined) {
-        reply.code(400).send({
-          success: false,
-          error: 'userId and progress are required',
-        });
-        return;
-      }
+      const params = validateRequest(challengeIdWithTeamIdSchema, request.params, 'Update challenge progress params');
+      const body = validateRequest(challengeProgressUpdateBodySchema, request.body, 'Update challenge progress body');
 
       // Verify the challenge exists and user is a participant
       const participant = await prisma.teamChallengeParticipant.findUnique({
         where: {
           challengeId_userId: {
-            challengeId,
+            challengeId: params.challengeId,
             userId: body.userId,
           },
         },
@@ -46,7 +37,7 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
         return;
       }
 
-      if (participant.challenge.teamId !== teamId) {
+      if (participant.challenge.teamId !== params.teamId) {
         reply.code(403).send({
           success: false,
           error: 'Challenge does not belong to the specified team',
@@ -58,7 +49,7 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
       const updatedParticipant = await prisma.teamChallengeParticipant.update({
         where: {
           challengeId_userId: {
-            challengeId,
+            challengeId: params.challengeId,
             userId: body.userId,
           },
         },
@@ -72,7 +63,7 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
       // Create progress history entry
       const progressEntry = await prisma.challengeProgress.create({
         data: {
-          challengeId,
+          challengeId: params.challengeId,
           userId: body.userId,
           progress: body.progress,
           notes: body.notes,
@@ -82,7 +73,7 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
       // Check for milestones
       const milestones = await prisma.challengeMilestone.findMany({
         where: {
-          challengeId,
+          challengeId: params.challengeId,
           achievedAt: null, // Not yet achieved
         },
         orderBy: {
@@ -101,35 +92,35 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
             },
           });
           achievedMilestones.push(achievedMilestone);
-
-          // Create notification for milestone achievement
-          await prisma.notification.create({
-            data: {
-              userId: body.userId,
-              message: `🎉 You achieved milestone: ${milestone.title} in ${participant.challenge.title}!`,
-              type: 'milestone_achieved',
-              actorId: body.userId,
-              link: `/team-challenges`,
-              metadata: {
-                challengeId,
-                milestoneId: milestone.id,
-                teamId,
-              },
-            },
-          });
         }
       }
 
+      log.info(`Updated challenge progress for user: ${body.userId}`, {
+        challengeId: params.challengeId,
+        teamId: params.teamId,
+        progress: body.progress,
+        milestonesAchieved: achievedMilestones.length,
+      });
+
       reply.send({
         success: true,
+        message: 'Progress updated successfully',
         data: {
           participant: updatedParticipant,
           progressEntry,
           achievedMilestones,
         },
       });
-    } catch (error) {
-      fastify.log.error(error);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to update challenge progress', err, {
+        teamId: request.params,
+        challengeId: request.params,
+        userId: request.body
+      });
       reply.code(500).send({
         success: false,
         error: 'Failed to update challenge progress',
@@ -361,4 +352,4 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-export default challengeProgressRoutes; 
+export default challengeProgressRoutes;

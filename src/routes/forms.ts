@@ -1,14 +1,18 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, userIdParamSchema } from '../plugins/validation.js';
+import { log } from '../utils/logger.js';
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const formsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /users/:userId/forms – return user form entries
   fastify.get('/users/:userId/forms', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
     try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Get user forms params');
+
       const userForms = await prisma.userForm.findMany({
-        where: { authorID: userId },
+        where: { authorID: params.userId },
         include: {
           sport: {
             select: { id: true, name: true },
@@ -45,12 +49,17 @@ const formsRoutes: FastifyPluginAsync = async (fastify) => {
         grade: form.grade,
       }));
 
+      log.info(`Fetched ${formattedForms.length} forms for user: ${params.userId}`);
       reply.send(formattedForms);
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch user forms', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch user forms' });
     }
   });
 };
 
-export default formsRoutes; 
+export default formsRoutes;

@@ -1,14 +1,18 @@
 import { FastifyPluginAsync } from 'fastify';
-// prisma CJS interop
+
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, userIdParamSchema } from '../plugins/validation.js';
+import { log } from '../utils/logger.js';
+// prisma CJS interop
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const leadersRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/users/:userId/leaders', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
     try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Get leaders params');
+
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { id: params.userId },
         include: {
           teamMemberships: {
             include: { team: true },
@@ -94,12 +98,17 @@ const leadersRoutes: FastifyPluginAsync = async (fastify) => {
         }).sort((a, b) => b.performanceScore - a.performanceScore);
       }
 
+      log.info(`Fetched leaders data for user: ${params.userId}`);
       reply.send({ teamLeaderboard, schoolLeaderboard });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch leaderboard', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch leaderboard' });
     }
   });
 };
 
-export default leadersRoutes; 
+export default leadersRoutes;

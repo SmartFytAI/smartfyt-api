@@ -1,6 +1,8 @@
-import { FastifyInstance } from 'fastify';
 import fs from 'fs';
 import path from 'path';
+
+import { FastifyInstance } from 'fastify';
+
 import log from '../utils/logger.js';
 
 interface MotivationalQuote {
@@ -21,15 +23,15 @@ function loadQuotes(): MotivationalQuote[] {
   try {
     const quotesPath = path.join(process.cwd(), 'data/motivational-quotes.json');
     log.info('📖 Loading motivational quotes from:', { path: quotesPath });
-    
+
     const quotesData = fs.readFileSync(quotesPath, 'utf8');
     const quotes = JSON.parse(quotesData);
-    
-    log.info('✅ Successfully loaded motivational quotes:', { 
+
+    log.info('✅ Successfully loaded motivational quotes:', {
       count: quotes.length,
       firstQuote: quotes[0]?.quote?.substring(0, 50) + '...'
     });
-    
+
     return quotes;
   } catch (error) {
     log.error('❌ Error loading motivational quotes:', { error });
@@ -39,8 +41,8 @@ function loadQuotes(): MotivationalQuote[] {
 
 export default async function motivationalQuotesRoutes(fastify: FastifyInstance) {
   // Get daily quote (based on current date)
-  fastify.get('/daily', async (request, _reply): Promise<QuotesResponse> => {
-    log.info('📖 Daily quote request received:', { 
+  fastify.get('/daily', async (request): Promise<QuotesResponse> => {
+    log.info('📖 Daily quote request received:', {
       url: request.url,
       method: request.method,
       headers: request.headers,
@@ -61,7 +63,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
       const randomIndex = Math.floor(Math.random() * quotes.length);
       const dailyQuote = quotes[randomIndex];
 
-      log.info('✅ Random daily quote selected:', { 
+      log.info('✅ Random daily quote selected:', {
         randomIndex,
         quoteId: dailyQuote.id,
         author: dailyQuote.author,
@@ -82,7 +84,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   });
 
   // Get random quote
-  fastify.get('/random', async (_request, _reply): Promise<QuotesResponse> => {
+  fastify.get('/random', async (): Promise<QuotesResponse> => {
     try {
       const quotes = loadQuotes();
       if (quotes.length === 0) {
@@ -100,7 +102,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
         data: randomQuote,
       };
     } catch (error) {
-      console.error('Error getting random quote:', error);
+      log.error('Error getting random quote:', error);
       return {
         success: false,
         error: 'Failed to retrieve random quote',
@@ -109,7 +111,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   });
 
   // Get all quotes
-  fastify.get('/all', async (_request, _reply): Promise<QuotesResponse> => {
+  fastify.get('/all', async (): Promise<QuotesResponse> => {
     try {
       const quotes = loadQuotes();
       if (quotes.length === 0) {
@@ -124,7 +126,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
         data: quotes,
       };
     } catch (error) {
-      console.error('Error getting all quotes:', error);
+      log.error('Error getting all quotes:', error);
       return {
         success: false,
         error: 'Failed to retrieve quotes',
@@ -135,7 +137,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   // Get quotes by category
   fastify.get<{
     Querystring: { category?: string };
-  }>('/category', async (request, _reply): Promise<QuotesResponse> => {
+  }>('/category', async (request): Promise<QuotesResponse> => {
     try {
       const { category } = request.query;
       const quotes = loadQuotes();
@@ -163,7 +165,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
         data: filteredQuotes,
       };
     } catch (error) {
-      console.error('Error getting quotes by category:', error);
+      log.error('Error getting quotes by category:', error);
       return {
         success: false,
         error: 'Failed to retrieve quotes by category',
@@ -172,7 +174,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   });
 
   // Get available categories
-  fastify.get('/categories', async (_request, _reply) => {
+  fastify.get('/categories', async () => {
     try {
       const quotes = loadQuotes();
       const categories = [...new Set(quotes.map((quote) => quote.category))];
@@ -182,7 +184,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
         data: categories,
       };
     } catch (error) {
-      console.error('Error getting categories:', error);
+      log.error('Error getting categories:', error);
       return {
         success: false,
         error: 'Failed to retrieve categories',
@@ -193,7 +195,7 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
   // Get quote by ID
   fastify.get<{
     Params: { id: string };
-  }>('/:id', async (request, _reply): Promise<QuotesResponse> => {
+  }>('/:id', async (request): Promise<QuotesResponse> => {
     try {
       const { id } = request.params;
       const quotes = loadQuotes();
@@ -212,11 +214,11 @@ export default async function motivationalQuotesRoutes(fastify: FastifyInstance)
         data: quote,
       };
     } catch (error) {
-      console.error('Error getting quote by ID:', error);
+      log.error('Error getting quote by ID:', error);
       return {
         success: false,
         error: 'Failed to retrieve quote',
       };
     }
   });
-} 
+}

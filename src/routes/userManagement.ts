@@ -1,15 +1,18 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import prismaModule from '../../lib/prisma.js';
+import { validateRequest, userIdParamSchema, createUserBodySchema, updateGoalsBodySchema } from '../plugins/validation.js';
+import log from '../utils/logger.js';
+
 const { prisma } = prismaModule as { prisma: typeof import('../../lib/prisma.js').prisma };
 
 const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /users/:userId/data – get user data
   fastify.get('/users/:userId/data', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-    
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
+      const params = validateRequest(userIdParamSchema, request.params, 'Get user data params');
+              const user = await prisma.user.findUnique({
+        where: { id: params.userId },
       });
 
       if (!user) {
@@ -29,27 +32,19 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.send(userData);
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch user data', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch user data' });
     }
   });
 
   // POST /users – create a new user
   fastify.post('/users', async (request, reply) => {
-    const body = request.body as {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      profileImage: string;
-      username: string;
-    };
-
     try {
-      if (!body.id || !body.email || !body.firstName || !body.lastName) {
-        reply.code(400).send({ error: 'Missing required fields: id, email, firstName, lastName' });
-        return;
-      }
+      const body = validateRequest(createUserBodySchema, request.body, 'Create user body');
 
       // First, check if a user with this email already exists
       const existingUser = await prisma.user.findUnique({
@@ -75,9 +70,10 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
 
       // TODO: Assign daily quests to the new user (this could be handled by a webhook or separate service)
 
+      log.info(`Created new user: ${body.id}`);
       reply.code(201).send({ success: true, user: newUser });
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to create user', err, { body: request.body });
       reply.code(500).send({ error: 'Failed to create user' });
     }
   });
@@ -143,21 +139,22 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
         lastDay,
       };
 
+      log.info(`Fetched snapshot data for user: ${userId}`);
       reply.send(snapshotData);
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to fetch user snapshot', err, { userId });
       reply.code(500).send({ error: 'Failed to fetch user snapshot' });
     }
   });
 
   // GET /users/:userId/goals – get user goals
   fastify.get('/users/:userId/goals', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-
     try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Get user goals params');
+
       const userForm = await prisma.userForm.findFirst({
         where: {
-          authorID: userId,
+          authorID: params.userId,
         },
         select: {
           academicGoals: true,
@@ -178,35 +175,27 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
         athletic: userForm.athleticGoals,
       };
 
+      log.info(`Fetched goals for user: ${params.userId}`);
       reply.send(goals);
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch user goals', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to fetch user goals' });
     }
   });
 
   // PUT /users/:userId/goals – update user goals
   fastify.put('/users/:userId/goals', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-    const body = request.body as {
-      goalType: 'athletic' | 'academic';
-      value: string;
-    };
-
     try {
-      if (!body.goalType || !body.value) {
-        reply.code(400).send({ error: 'goalType and value are required' });
-        return;
-      }
-
-      if (!['athletic', 'academic'].includes(body.goalType)) {
-        reply.code(400).send({ error: 'goalType must be either "athletic" or "academic"' });
-        return;
-      }
+      const params = validateRequest(userIdParamSchema, request.params, 'Update user goals params');
+      const body = validateRequest(updateGoalsBodySchema, request.body, 'Update user goals body');
 
       // Find the most recent userForm for the user
       const existingForm = await prisma.userForm.findFirst({
-        where: { authorID: userId },
+        where: { authorID: params.userId },
         orderBy: { updatedAt: 'desc' },
       });
 
@@ -222,7 +211,7 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
         // If no form exists, create one (with empty string/default for all required fields)
         await prisma.userForm.create({
           data: {
-            authorID: userId,
+            authorID: params.userId,
             athleticGoals: body.goalType === 'athletic' ? body.value : '',
             academicGoals: body.goalType === 'academic' ? body.value : '',
             title: Date.now().toString(),
@@ -251,7 +240,7 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.send({ success: true });
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to update user goals', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to update user goals' });
     }
   });
@@ -274,9 +263,10 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
         data: { profileImage: body.imageUrl },
       });
 
+      log.info(`Updated profile image for user: ${userId}`);
       reply.send({ success: true, profileImage: updatedUser.profileImage });
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to update profile image', err, { userId });
       reply.code(500).send({ error: 'Failed to update profile image' });
     }
   });
@@ -311,7 +301,7 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       if (existingForm) {
         // Update existing form
         const updateData: any = {};
-        
+
         if (body.grade !== undefined) updateData.grade = body.grade;
         if (body.age !== undefined) updateData.age = body.age;
         if (body.phone !== undefined) updateData.phone = body.phone;
@@ -349,7 +339,7 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
             if (!team) {
               const school = await prisma.school.findUnique({ where: { id: schoolId } });
               const sport = await prisma.sport.findUnique({ where: { id: sportId } });
-              
+
               if (school && sport) {
                 team = await prisma.team.create({
                   data: {
@@ -375,6 +365,7 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
           data: updateData,
         });
 
+        log.info(`Updated form data for user: ${userId}`);
         reply.send({ success: true, formData: updatedForm });
       } else {
         // Create new form if none exists
@@ -417,7 +408,7 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
           if (!team) {
             const school = await prisma.school.findUnique({ where: { id: body.school } });
             const sport = await prisma.sport.findUnique({ where: { id: body.sport } });
-            
+
             if (school && sport) {
               team = await prisma.team.create({
                 data: {
@@ -439,13 +430,14 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
           data: formData,
         });
 
+        log.info(`Created new form data for user: ${userId}`);
         reply.send({ success: true, formData: newForm });
       }
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to update user form data', err, { userId });
       reply.code(500).send({ error: 'Failed to update user form data' });
     }
   });
 };
 
-export default userManagementRoutes; 
+export default userManagementRoutes;

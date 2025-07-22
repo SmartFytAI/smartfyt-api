@@ -78,7 +78,7 @@ describe('Upload Routes', () => {
         },
       });
 
-      expectErrorResponse(response, 400, 'fileName and fileType are required');
+      expectErrorResponse(response, 400, 'Get signed URL body validation failed: Required');
     });
   });
 
@@ -138,7 +138,7 @@ describe('Upload Routes', () => {
         },
       });
 
-      expectErrorResponse(response, 400, 'fileName and fileType are required');
+      expectErrorResponse(response, 400, 'Challenge media upload body validation failed: Required');
     });
 
     it('should work without challengeId', async () => {

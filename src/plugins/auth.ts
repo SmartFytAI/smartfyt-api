@@ -1,5 +1,6 @@
-import { FastifyPluginAsync } from 'fastify';
 import { validateToken } from '@kinde/jwt-validator';
+import { FastifyPluginAsync } from 'fastify';
+
 import log from '../utils/logger.js';
 
 // Type for the validated token payload
@@ -22,7 +23,7 @@ declare module 'fastify' {
 const authPlugin: FastifyPluginAsync = async (fastify) => {
   // Skip auth for health check and public endpoints
   const publicRoutes = ['/health'];
-  
+
   fastify.addHook('onRequest', async (request, reply) => {
     // Skip authentication for public routes
     if (publicRoutes.includes(request.url)) {
@@ -31,42 +32,42 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
     try {
       const authHeader = request.headers['authorization'];
-      
+
       if (!authHeader) {
-        log.auth.failure('Missing authorization header', { 
-          url: request.url, 
-          method: request.method 
+        log.auth.failure('Missing authorization header', {
+          url: request.url,
+          method: request.method
         });
-        reply.code(401).send({ 
-          error: 'Unauthorized', 
-          message: 'Authorization header is required' 
+        reply.code(401).send({
+          error: 'Unauthorized',
+          message: 'Authorization header is required'
         });
         return;
       }
 
       // Extract token from "Bearer <token>" format
       const token = authHeader.replace(/^Bearer\s+/i, '');
-      
+
       if (!token) {
-        log.auth.failure('Missing bearer token', { 
-          url: request.url, 
-          method: request.method 
+        log.auth.failure('Missing bearer token', {
+          url: request.url,
+          method: request.method
         });
-        reply.code(401).send({ 
-          error: 'Unauthorized', 
-          message: 'Bearer token is required' 
+        reply.code(401).send({
+          error: 'Unauthorized',
+          message: 'Bearer token is required'
         });
         return;
       }
 
       // Get Kinde domain from environment variables
       const kindeDomain = process.env.KINDE_ISSUER_URL || process.env.KINDE_DOMAIN;
-      
+
       if (!kindeDomain) {
         log.error('KINDE_ISSUER_URL or KINDE_DOMAIN environment variable is not set');
-        reply.code(500).send({ 
-          error: 'Internal Server Error', 
-          message: 'Authentication configuration error' 
+        reply.code(500).send({
+          error: 'Internal Server Error',
+          message: 'Authentication configuration error'
         });
         return;
       }
@@ -78,13 +79,13 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       });
 
       if (!validationResult.valid) {
-        log.auth.tokenValidation(false, { 
-          url: request.url, 
+        log.auth.tokenValidation(false, {
+          url: request.url,
           method: request.method,
           result: validationResult
         });
-        reply.code(401).send({ 
-          error: 'Unauthorized', 
+        reply.code(401).send({
+          error: 'Unauthorized',
           message: 'Invalid or expired token'
         });
         return;
@@ -93,7 +94,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       // Extract user information from the validated token
       // The validateToken function returns the decoded payload when valid
       const payload = validationResult as any; // Type assertion since the interface may not be complete
-      
+
       if (payload.payload) {
         // Some JWT validators return { valid: true, payload: {...} }
         const actualPayload = payload.payload;
@@ -116,31 +117,31 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
           ...payload
         };
       } else {
-        log.auth.failure('No user payload found in validated token', { 
-          url: request.url, 
-          method: request.method 
+        log.auth.failure('No user payload found in validated token', {
+          url: request.url,
+          method: request.method
         });
-        reply.code(401).send({ 
-          error: 'Unauthorized', 
-          message: 'Invalid token payload' 
+        reply.code(401).send({
+          error: 'Unauthorized',
+          message: 'Invalid token payload'
         });
         return;
       }
 
-      log.auth.success(request.user!.id, { 
+      log.auth.success(request.user!.id, {
         email: request.user!.email,
         url: request.url,
         method: request.method
       });
-      
+
     } catch (error) {
-      log.error('Authentication error occurred', error, { 
-        url: request.url, 
-        method: request.method 
+      log.error('Authentication error occurred', error, {
+        url: request.url,
+        method: request.method
       });
-      reply.code(401).send({ 
-        error: 'Unauthorized', 
-        message: 'Token validation failed' 
+      reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Token validation failed'
       });
       return;
     }

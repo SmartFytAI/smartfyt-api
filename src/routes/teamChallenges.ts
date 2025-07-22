@@ -1,5 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
+
 import { prisma } from '../../lib/prisma.js';
+import { validateRequest, teamIdParamSchema, createTeamChallengeBodySchema, joinChallengeBodySchema, teamRecognitionBodySchema, challengeIdWithTeamIdSchema, userIdParamSchema } from '../plugins/validation.js';
+import { log } from '../utils/logger.js';
 
 /**
  * Team Challenges Gamification Routes
@@ -9,11 +12,10 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /teams/:teamId/challenges – Get team challenges
   fastify.get('/teams/:teamId/challenges', async (request, reply) => {
-    const { teamId } = request.params as { teamId: string };
-    
     try {
+      const params = validateRequest(teamIdParamSchema, request.params, 'Get team challenges params');
       const challenges = await prisma.teamChallenge.findMany({
-        where: { teamId, isActive: true },
+        where: { teamId: params.teamId, isActive: true },
         include: {
           creator: {
             select: {
@@ -41,27 +43,20 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.send({ success: true, data: challenges });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch team challenges', err, { teamId: request.params });
       reply.code(500).send({ error: 'Failed to fetch team challenges' });
     }
   });
 
   // POST /teams/:teamId/challenges – Create team challenge
   fastify.post('/teams/:teamId/challenges', async (request, reply) => {
-    const { teamId } = request.params as { teamId: string };
-    const body = request.body as {
-      title: string;
-      description: string;
-      type: 'step_competition' | 'workout' | 'habit' | 'skill' | 'team_building';
-      duration: number;
-      userIds: string[];
-    };
-
     try {
-      if (!body.title || !body.description || !body.type) {
-        reply.code(400).send({ error: 'Title, description, and type are required' });
-        return;
-      }
+      const params = validateRequest(teamIdParamSchema, request.params, 'Create team challenge params');
+      const body = validateRequest(createTeamChallengeBodySchema, request.body, 'Create team challenge body');
 
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + body.duration);
@@ -73,7 +68,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
           description: body.description,
           type: body.type,
           duration: body.duration,
-          teamId,
+          teamId: params.teamId,
           createdBy: body.userIds[0] || 'system',
           endDate,
         },
@@ -123,29 +118,22 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.code(201).send({ success: true, data: challenge });
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to create team challenge', err, { teamId: request.params, body: request.body });
       reply.code(500).send({ error: 'Failed to create team challenge' });
     }
   });
 
   // POST /teams/:teamId/challenges/:challengeId/join – Join team challenge
   fastify.post('/teams/:teamId/challenges/:challengeId/join', async (request, reply) => {
-    const { teamId: _teamId, challengeId } = request.params as { teamId: string; challengeId: string };
-    const body = request.body as {
-      userId: string;
-    };
-
     try {
-      if (!body.userId) {
-        reply.code(400).send({ error: 'userId is required' });
-        return;
-      }
+      const params = validateRequest(challengeIdWithTeamIdSchema, request.params, 'Join team challenge params');
+      const body = validateRequest(joinChallengeBodySchema, request.body, 'Join team challenge body');
 
       // Check if user is already a participant
       const existingParticipant = await prisma.teamChallengeParticipant.findUnique({
         where: {
           challengeId_userId: {
-            challengeId,
+            challengeId: params.challengeId,
             userId: body.userId,
           },
         },
@@ -159,7 +147,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
       // Add user as participant
       const participant = await prisma.teamChallengeParticipant.create({
         data: {
-          challengeId,
+          challengeId: params.challengeId,
           userId: body.userId,
           status: 'accepted',
           joinedAt: new Date(),
@@ -178,7 +166,11 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.code(201).send({ success: true, data: participant });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to join team challenge', err, { teamId: request.params, body: request.body });
       reply.code(500).send({ error: 'Failed to join team challenge' });
     }
   });
@@ -187,11 +179,10 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /teams/:teamId/recognitions – Get team recognitions
   fastify.get('/teams/:teamId/recognitions', async (request, reply) => {
-    const { teamId } = request.params as { teamId: string };
-    
     try {
+      const params = validateRequest(teamIdParamSchema, request.params, 'Get team recognitions params');
       const recognitions = await prisma.teamRecognition.findMany({
-        where: { teamId },
+        where: { teamId: params.teamId },
         include: {
           fromUser: {
             select: {
@@ -228,6 +219,10 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.send({ success: true, data: recognitions });
     } catch (err) {
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
       fastify.log.error(err);
       reply.code(500).send({ error: 'Failed to fetch team recognitions' });
     }
@@ -235,19 +230,9 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /teams/:teamId/recognitions – Give recognition
   fastify.post('/teams/:teamId/recognitions', async (request, reply) => {
-    const { teamId } = request.params as { teamId: string };
-    const body = request.body as {
-      fromUserId: string;
-      toUserId: string;
-      type: 'clap' | 'fire' | 'heart' | 'flex' | 'zap' | 'trophy';
-      message?: string;
-    };
-
     try {
-      if (!body.fromUserId || !body.toUserId || !body.type) {
-        reply.code(400).send({ error: 'fromUserId, toUserId, and type are required' });
-        return;
-      }
+      const params = validateRequest(teamIdParamSchema, request.params, 'Create team recognition params');
+      const body = validateRequest(teamRecognitionBodySchema, request.body, 'Create team recognition body');
 
       // Check if user has reached their daily limit for this type
       const today = new Date();
@@ -276,7 +261,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           fromUserId: body.fromUserId,
           toUserId: body.toUserId,
-          teamId,
+          teamId: params.teamId,
           type: body.type,
           message: body.message,
         },
@@ -331,23 +316,26 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.code(201).send({ success: true, data: recognition });
     } catch (err) {
-      fastify.log.error(err);
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to give recognition', err, { userId: request.params });
       reply.code(500).send({ error: 'Failed to give recognition' });
     }
   });
 
   // GET /users/:userId/recognition-limits – Get user's recognition limits
   fastify.get('/users/:userId/recognition-limits', async (request, reply) => {
-    const { userId } = request.params as { userId: string };
-    
     try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Get recognition limits params');
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       const limits = await prisma.userRecognitionLimit.findUnique({
         where: {
           userId_date: {
-            userId,
+            userId: params.userId,
             date: today,
           },
         },
@@ -365,6 +353,10 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.send({ success: true, data: limits || defaultLimits });
     } catch (err) {
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
       fastify.log.error(err);
       reply.code(500).send({ error: 'Failed to fetch recognition limits' });
     }
@@ -375,53 +367,54 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /mock/team-challenges/seed – Seed mock data
   fastify.post('/mock/team-challenges/seed', async (request, reply) => {
     try {
-      // Create mock challenges
-      const _mockChallenges = [
-        {
-          title: 'Step Competition',
-          description: 'Who can get the most steps this week?',
-          type: 'step_competition',
-          duration: 7,
-        },
-        {
-          title: 'Workout Warriors',
-          description: 'Complete 3 workouts this week',
-          type: 'workout',
-          duration: 7,
-        },
-      ];
+      // Mock data structure for development reference
+      const mockDataStructure = {
+        challenges: [
+          {
+            title: 'Step Competition',
+            description: 'Who can get the most steps this week?',
+            type: 'step_competition',
+            duration: 7,
+          },
+          {
+            title: 'Workout Warriors',
+            description: 'Complete 3 workouts this week',
+            type: 'workout',
+            duration: 7,
+          },
+        ],
+        recognitions: [
+          {
+            fromUserId: 'user1',
+            toUserId: 'user2',
+            type: 'clap',
+            message: 'Great job on the workout today!',
+          },
+          {
+            fromUserId: 'user2',
+            toUserId: 'user3',
+            type: 'fire',
+            message: 'You crushed that challenge!',
+          },
+          {
+            fromUserId: 'user3',
+            toUserId: 'user1',
+            type: 'heart',
+            message: 'Thanks for being such a great teammate!',
+          },
+        ],
+      };
 
-      // Create mock recognitions
-      const _mockRecognitions = [
-        {
-          fromUserId: 'user1',
-          toUserId: 'user2',
-          type: 'clap',
-          message: 'Great job on the workout today!',
-        },
-        {
-          fromUserId: 'user2',
-          toUserId: 'user3',
-          type: 'fire',
-          message: 'You crushed that challenge!',
-        },
-        {
-          fromUserId: 'user3',
-          toUserId: 'user1',
-          type: 'heart',
-          message: 'Thanks for being such a great teammate!',
-        },
-      ];
-
-      reply.send({ 
-        success: true, 
-        message: 'Mock data structure defined. Use actual team IDs and user IDs for real data.' 
+      reply.send({
+        success: true,
+        message: 'Mock data structure defined. Use actual team IDs and user IDs for real data.',
+        structure: mockDataStructure
       });
     } catch (err) {
-      fastify.log.error(err);
+      log.error('Failed to seed mock data', err);
       reply.code(500).send({ error: 'Failed to seed mock data' });
     }
   });
 };
 
-export default teamChallengesRoutes; 
+export default teamChallengesRoutes;
