@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 
 import { prisma } from '../../lib/prisma.js';
-import { validateRequest, teamIdParamSchema, createTeamChallengeBodySchema, joinChallengeBodySchema, teamRecognitionBodySchema, challengeIdWithTeamIdSchema, userIdParamSchema } from '../plugins/validation.js';
+import { validateRequest, teamIdParamSchema, createTeamChallengeBodySchema, joinChallengeBodySchema, teamRecognitionBodySchema, recognitionInteractionBodySchema, challengeIdWithTeamIdSchema, userIdParamSchema } from '../plugins/validation.js';
 import { log } from '../utils/logger.js';
 
 /**
@@ -175,6 +175,8 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+
+
   // ===== TEAM RECOGNITION =====
 
   // GET /teams/:teamId/recognitions – Get team recognitions
@@ -200,18 +202,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
               profileImage: true,
             },
           },
-          interactions: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  profileImage: true,
-                },
-              },
-            },
-          },
+
         },
         orderBy: { createdAt: 'desc' },
         take: 50,
@@ -308,7 +299,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           userId: body.toUserId,
           message: `${recognition.fromUser.firstName} gave you a ${body.type}!`,
-          type: 'recognition',
+          type: 'team_recognition',
           link: `/team-challenges?tab=recognition`,
           actorId: body.fromUserId,
         },
@@ -359,6 +350,149 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
       }
       fastify.log.error(err);
       reply.code(500).send({ error: 'Failed to fetch recognition limits' });
+    }
+  });
+
+  // ===== RECOGNITION INTERACTIONS =====
+
+  // GET /recognitions/:recognitionId/interactions – Get interactions for a recognition
+  fastify.get('/recognitions/:recognitionId/interactions', async (request, reply) => {
+    try {
+      const { recognitionId } = request.params as { recognitionId: string };
+      
+      const interactions = await prisma.recognitionInteraction.findMany({
+        where: {
+          recognitionId: recognitionId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      reply.send({ success: true, data: interactions });
+    } catch (err) {
+      log.error('Failed to fetch recognition interactions', err);
+      reply.code(500).send({ error: 'Failed to fetch recognition interactions' });
+    }
+  });
+
+  // POST /recognitions/:recognitionId/interactions – Add interaction to a recognition
+  fastify.post('/recognitions/:recognitionId/interactions', async (request, reply) => {
+    try {
+      const { recognitionId } = request.params as { recognitionId: string };
+      const body = validateRequest(recognitionInteractionBodySchema, request.body, 'Create recognition interaction body');
+      
+      // Verify the recognition exists
+      const recognition = await prisma.teamRecognition.findUnique({
+        where: { id: recognitionId },
+      });
+
+      if (!recognition) {
+        reply.code(404).send({ error: 'Recognition not found' });
+        return;
+      }
+
+      // Check if user already has this interaction type for this recognition
+      const existingInteraction = await prisma.recognitionInteraction.findUnique({
+        where: {
+          recognitionId_userId_interactionType: {
+            recognitionId: recognitionId,
+            userId: body.userId,
+            interactionType: body.interactionType,
+          },
+        },
+      });
+
+      if (existingInteraction) {
+        reply.code(400).send({ error: `User already has ${body.interactionType} interaction for this recognition` });
+        return;
+      }
+
+      // Create the interaction
+      const interaction = await prisma.recognitionInteraction.create({
+        data: {
+          id: crypto.randomUUID(),
+          recognitionId: recognitionId,
+          userId: body.userId,
+          interactionType: body.interactionType,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+            },
+          },
+        },
+      });
+
+      reply.code(201).send({ success: true, data: interaction });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to create recognition interaction', err);
+      reply.code(500).send({ error: 'Failed to create recognition interaction' });
+    }
+  });
+
+  // DELETE /recognitions/:recognitionId/interactions/:userId/:interactionType – Remove interaction
+  fastify.delete('/recognitions/:recognitionId/interactions/:userId/:interactionType', async (request, reply) => {
+    try {
+      const { recognitionId, userId, interactionType } = request.params as { 
+        recognitionId: string; 
+        userId: string; 
+        interactionType: string;
+      };
+
+      // Validate interaction type
+      if (!['like', 'comment', 'share'].includes(interactionType)) {
+        reply.code(400).send({ error: 'Invalid interaction type' });
+        return;
+      }
+
+      const interaction = await prisma.recognitionInteraction.findUnique({
+        where: {
+          recognitionId_userId_interactionType: {
+            recognitionId: recognitionId,
+            userId: userId,
+            interactionType: interactionType as 'like' | 'comment' | 'share',
+          },
+        },
+      });
+
+      if (!interaction) {
+        reply.code(404).send({ error: 'Interaction not found' });
+        return;
+      }
+
+      await prisma.recognitionInteraction.delete({
+        where: {
+          recognitionId_userId_interactionType: {
+            recognitionId: recognitionId,
+            userId: userId,
+            interactionType: interactionType as 'like' | 'comment' | 'share',
+          },
+        },
+      });
+
+      reply.send({ success: true, message: 'Interaction removed successfully' });
+    } catch (err) {
+      log.error('Failed to remove recognition interaction', err);
+      reply.code(500).send({ error: 'Failed to remove recognition interaction' });
     }
   });
 

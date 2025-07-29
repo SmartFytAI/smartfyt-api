@@ -37,6 +37,48 @@ const questsRoutes: FastifyPluginAsync = async (fastify) => {
       reply.code(500).send({ error: 'Failed to fetch quests' });
     }
   });
+
+  fastify.get('/users/:userId/quests/available', async (request, reply) => {
+    try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Get available quests params');
+
+      // Get all quests that are not assigned to this user
+      const availableQuests = await prisma.quest.findMany({
+        where: {
+          userQuests: {
+            none: {
+              userId: params.userId,
+            },
+          },
+        },
+        include: {
+          category: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      const quests = availableQuests.map((quest) => ({
+        id: quest.id,
+        title: quest.title,
+        description: quest.description,
+        pointValue: quest.pointValue,
+        categoryName: quest.category.name,
+        isNew: true, // All available quests are considered "new"
+      }));
+
+      log.info(`Fetched ${quests.length} available quests for user: ${params.userId}`);
+      reply.send(quests);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to fetch available quests', err, { userId: request.params });
+      reply.code(500).send({ error: 'Failed to fetch available quests' });
+    }
+  });
 };
 
 export default questsRoutes;

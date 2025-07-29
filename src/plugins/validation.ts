@@ -119,6 +119,13 @@ export const teamRecognitionBodySchema = z.object({
   message: z.string().optional(),
 });
 
+export const recognitionInteractionBodySchema = z.object({
+  userId: z.string().min(1, 'User ID is required'),
+  interactionType: z.enum(['like', 'comment', 'share'], {
+    errorMap: () => ({ message: 'Interaction type must be like, comment, or share' }),
+  }),
+});
+
 export const createUserBodySchema = z.object({
   id: z.string().min(1, 'User ID is required'),
   email: z.string().email('Invalid email format'),
@@ -322,6 +329,18 @@ export const challengeProgressUpdateBodySchema = z.object({
 export const teamMembershipCreateBodySchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   role: z.enum(['member', 'coach', 'admin']).default('member'),
+});
+
+// Push notification schemas
+export const pushSubscriptionSchema = z.object({
+  userId: z.string().min(1, 'User ID is required'),
+  subscription: z.object({
+    endpoint: z.string().url('Endpoint must be a valid URL'),
+    keys: z.object({
+      p256dh: z.string().min(1, 'P256DH key is required'),
+      auth: z.string().min(1, 'Auth key is required'),
+    }),
+  }),
 });
 
 // Composite schemas for common route patterns

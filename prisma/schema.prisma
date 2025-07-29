@@ -116,7 +116,7 @@ model User {
   athleteInsights        JournalInsight[]         @relation("AthleteInsights")
   morningJournals        MorningJournal[]
   triggeredNotifications Notification[]           @relation("NotificationActor")
-  notifications          Notification[]
+  notifications          Notification[]           @relation("UserNotifications")
   sleep                  Sleep[]
   sleepDetails           SleepDetail[]
   subscriptions          Subscription[]
@@ -131,6 +131,7 @@ model User {
   UserStreak             UserStreak[]
   terraUserProfile       terra_users?             @relation("UserToTerraUsers")
   sports                 Sport[]                  @relation("SportToUser")
+  pushSubscriptions      PushSubscription[]
   // Team Challenges Gamification Relations
   teamChallengesCreated  TeamChallenge[]          @relation("TeamChallengeCreator")
   teamChallengeParticipants TeamChallengeParticipant[]
@@ -389,18 +390,32 @@ model Notification {
   id        String   @id @default(cuid())
   userId    String
   message   String
+  type      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   link      String?
   actorId   String?
-  type      String?
   actor     User?    @relation("NotificationActor", fields: [actorId], references: [id])
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, read, createdAt])
+  @@unique([userId, endpoint])
   @@index([userId])
-  @@index([actorId])
 }
 
 model ChatSession {

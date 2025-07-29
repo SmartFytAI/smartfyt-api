@@ -140,6 +140,33 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+  // PUT /users/:userId/notifications/read-all – mark all notifications as read
+  fastify.put('/users/:userId/notifications/read-all', async (request, reply) => {
+    try {
+      const params = validateRequest(userIdParamSchema, request.params, 'Mark all notifications read params');
+
+      const result = await prisma.notification.updateMany({
+        where: {
+          userId: params.userId,
+          read: false,
+        },
+        data: {
+          read: true,
+        },
+      });
+
+      reply.send({ success: true, count: result.count });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('validation failed')) {
+        log.warn('[API] Validation error in markAllNotificationsRead:', { error: err.message });
+        reply.code(400).send({ error: err.message });
+        return;
+      }
+      log.error('Failed to mark all notifications as read', err, { userId: request.params });
+      reply.code(500).send({ error: 'Failed to mark all notifications as read' });
+    }
+  });
+
   // DELETE /users/:userId/notifications – delete all user notifications
   fastify.delete('/users/:userId/notifications', async (request, reply) => {
     try {

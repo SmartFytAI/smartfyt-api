@@ -19,6 +19,7 @@ import leadersRoutes from './routes/leaders.js';
 import metricsRoutes from './routes/metricsLatest.js';
 import motivationalQuotesRoutes from './routes/motivationalQuotes.js';
 import notificationsRoutes from './routes/notifications.js';
+import pushNotificationRoutes from './routes/pushNotifications.js';
 import questManagementRoutes from './routes/questManagement.js';
 import questsRoutes from './routes/quests.js';
 import schoolsRoutes from './routes/schools.js';
@@ -90,6 +91,7 @@ server.register(coachDataRoutes);
 server.register(notificationsRoutes);
 server.register(leaderboardRoutes);
 server.register(teamChallengesRoutes);
+server.register(pushNotificationRoutes);
 
 server.register(challengeProgressRoutes);
 

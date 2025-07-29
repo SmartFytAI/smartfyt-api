@@ -61,10 +61,10 @@ const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           id: body.id,
           email: body.email,
-          firstName: body.firstName,
-          lastName: body.lastName,
-          profileImage: body.profileImage,
-          username: body.username,
+          firstName: body.firstName ?? '',
+          lastName: body.lastName ?? '',
+          profileImage: body.profileImage ?? '',
+          username: body.username ?? '',
         },
       });
 
