@@ -46,10 +46,27 @@ log.info('KINDE_CLIENT_ID:', { configured: !!process.env.KINDE_CLIENT_ID });
 const server = Fastify();
 
 // Register CORS to allow frontend requests
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001'
+];
+
+// Add production URLs from environment variables
+if (process.env.NEXT_PUBLIC_APP_URL) {
+  allowedOrigins.push(process.env.NEXT_PUBLIC_APP_URL);
+}
+
+// Add any additional production URLs
+if (process.env.ADDITIONAL_CORS_ORIGINS) {
+  const additionalOrigins = process.env.ADDITIONAL_CORS_ORIGINS.split(',').map(origin => origin.trim());
+  allowedOrigins.push(...additionalOrigins);
+}
+
 server.register(cors, {
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 });
 
 // Public routes (no authentication required)
