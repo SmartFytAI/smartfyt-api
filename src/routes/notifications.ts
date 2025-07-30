@@ -24,7 +24,7 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           userId: body.userId,
           message: body.message,
-          type: body.type,
+          type: body.type || 'general',
           link: body.link,
           actorId: body.actorId,
           read: false,

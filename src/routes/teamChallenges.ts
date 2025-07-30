@@ -175,8 +175,6 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-
-
   // ===== TEAM RECOGNITION =====
 
   // GET /teams/:teamId/recognitions – Get team recognitions
@@ -359,10 +357,10 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/recognitions/:recognitionId/interactions', async (request, reply) => {
     try {
       const { recognitionId } = request.params as { recognitionId: string };
-      
+
       const interactions = await prisma.recognitionInteraction.findMany({
         where: {
-          recognitionId: recognitionId,
+          recognitionId,
         },
         include: {
           user: {
@@ -391,7 +389,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const { recognitionId } = request.params as { recognitionId: string };
       const body = validateRequest(recognitionInteractionBodySchema, request.body, 'Create recognition interaction body');
-      
+
       // Verify the recognition exists
       const recognition = await prisma.teamRecognition.findUnique({
         where: { id: recognitionId },
@@ -406,7 +404,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
       const existingInteraction = await prisma.recognitionInteraction.findUnique({
         where: {
           recognitionId_userId_interactionType: {
-            recognitionId: recognitionId,
+            recognitionId,
             userId: body.userId,
             interactionType: body.interactionType,
           },
@@ -422,7 +420,7 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
       const interaction = await prisma.recognitionInteraction.create({
         data: {
           id: crypto.randomUUID(),
-          recognitionId: recognitionId,
+          recognitionId,
           userId: body.userId,
           interactionType: body.interactionType,
         },
@@ -452,9 +450,9 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /recognitions/:recognitionId/interactions/:userId/:interactionType – Remove interaction
   fastify.delete('/recognitions/:recognitionId/interactions/:userId/:interactionType', async (request, reply) => {
     try {
-      const { recognitionId, userId, interactionType } = request.params as { 
-        recognitionId: string; 
-        userId: string; 
+      const { recognitionId, userId, interactionType } = request.params as {
+        recognitionId: string;
+        userId: string;
         interactionType: string;
       };
 
@@ -467,8 +465,8 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
       const interaction = await prisma.recognitionInteraction.findUnique({
         where: {
           recognitionId_userId_interactionType: {
-            recognitionId: recognitionId,
-            userId: userId,
+            recognitionId,
+            userId,
             interactionType: interactionType as 'like' | 'comment' | 'share',
           },
         },
@@ -482,8 +480,8 @@ const teamChallengesRoutes: FastifyPluginAsync = async (fastify) => {
       await prisma.recognitionInteraction.delete({
         where: {
           recognitionId_userId_interactionType: {
-            recognitionId: recognitionId,
-            userId: userId,
+            recognitionId,
+            userId,
             interactionType: interactionType as 'like' | 'comment' | 'share',
           },
         },

@@ -161,7 +161,8 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
           user: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -221,7 +222,8 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
           user: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -328,7 +330,8 @@ const challengeProgressRoutes: FastifyPluginAsync = async (fastify) => {
           achiever: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },

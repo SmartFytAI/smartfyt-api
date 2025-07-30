@@ -1,11 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 import webpush from 'web-push';
+import { z } from 'zod';
 
 import prismaModule from '../../lib/prisma.js';
 import {
   validateRequest,
   pushSubscriptionSchema,
-  userIdParamSchema,
 } from '../plugins/validation.js';
 import log from '../utils/logger.js';
 
@@ -99,19 +99,15 @@ const pushNotificationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/push/send', async (request, reply) => {
     try {
       const body = validateRequest(
-        {
-          type: 'object',
-          properties: {
-            userId: { type: 'string' },
-            title: { type: 'string' },
-            body: { type: 'string' },
-            icon: { type: 'string' },
-            badge: { type: 'string' },
-            tag: { type: 'string' },
-            data: { type: 'object' },
-          },
-          required: ['userId', 'title', 'body'],
-        },
+        z.object({
+          userId: z.string().min(1, 'User ID is required'),
+          title: z.string().min(1, 'Title is required'),
+          body: z.string().min(1, 'Body is required'),
+          icon: z.string().optional(),
+          badge: z.string().optional(),
+          tag: z.string().optional(),
+          data: z.record(z.string(), z.unknown()).optional(),
+        }),
         request.body,
         'Send push notification'
       );
@@ -154,8 +150,8 @@ const pushNotificationRoutes: FastifyPluginAsync = async (fastify) => {
       );
 
       // Count successful and failed sends
-      const successful = results.filter(result => result.status === 'fulfilled').length;
-      const failed = results.filter(result => result.status === 'rejected').length;
+      const successful = results.filter((result: any) => result.status === 'fulfilled').length;
+      const failed = results.filter((result: any) => result.status === 'rejected').length;
 
       log.info('[API] Push notification sent', {
         userId: body.userId,
@@ -184,20 +180,16 @@ const pushNotificationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/push/send-to-team', async (request, reply) => {
     try {
       const body = validateRequest(
-        {
-          type: 'object',
-          properties: {
-            teamId: { type: 'string' },
-            title: { type: 'string' },
-            body: { type: 'string' },
-            icon: { type: 'string' },
-            badge: { type: 'string' },
-            tag: { type: 'string' },
-            data: { type: 'object' },
-            excludeUserId: { type: 'string' }, // Optional: exclude sender
-          },
-          required: ['teamId', 'title', 'body'],
-        },
+        z.object({
+          teamId: z.string().min(1, 'Team ID is required'),
+          title: z.string().min(1, 'Title is required'),
+          body: z.string().min(1, 'Body is required'),
+          icon: z.string().optional(),
+          badge: z.string().optional(),
+          tag: z.string().optional(),
+          data: z.record(z.string(), z.unknown()).optional(),
+          excludeUserId: z.string().optional(), // Optional: exclude sender
+        }),
         request.body,
         'Send push notification to team'
       );
@@ -205,7 +197,7 @@ const pushNotificationRoutes: FastifyPluginAsync = async (fastify) => {
       log.info('[API] Send push notification to team request', { teamId: body.teamId });
 
       // Get all team members
-      const teamMembers = await prisma.teamMember.findMany({
+      const teamMembers = await prisma.teamMembership.findMany({
         where: {
           teamId: body.teamId,
           ...(body.excludeUserId && { userId: { not: body.excludeUserId } }),
@@ -226,8 +218,8 @@ const pushNotificationRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       // Collect all push subscriptions
-      const allSubscriptions = teamMembers.flatMap(member => 
-        member.user.pushSubscriptions.map(subscription => ({
+            const allSubscriptions = teamMembers.flatMap((member: any) =>
+        member.user.pushSubscriptions.map((subscription: any) => ({
           subscription,
           userId: member.userId,
         }))
@@ -241,7 +233,7 @@ const pushNotificationRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Send push notification to all team members
       const results = await Promise.allSettled(
-        allSubscriptions.map(async ({ subscription, userId }) => {
+        allSubscriptions.map(async ({ subscription }: { subscription: any; userId: string }) => {
           const pushSubscription = {
             endpoint: subscription.endpoint,
             keys: {
@@ -291,4 +283,4 @@ const pushNotificationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-export default pushNotificationRoutes; 
+export default pushNotificationRoutes;
